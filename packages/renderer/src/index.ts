@@ -24,6 +24,7 @@ export {getCompositions} from './get-compositions';
 export {renderFrames} from './render';
 export {renderStill} from './render-still';
 export {stitchFramesToVideo} from './stitcher';
+export {stitchFramesToHLS} from './stitcher-hls';
 export {OnErrorInfo, OnStartData, RenderFramesOutput} from './types';
 export const RenderInternals = {
 	ensureLocalBrowser,
