@@ -144,7 +144,7 @@ export const stitchFramesToHLS = async (options: {
 	const {complexFilterFlag, cleanup} = await createFfmpegComplexFilter(filters);
 	const ffmpegArgs = [
 		['-r', String(options.fps)],
-		isAudioOnly ? null : ['-f', 'hls'],
+		isAudioOnly ? null : ['-f', 'image2'],
 		isAudioOnly ? null : ['-s', `${options.width}x${options.height}`],
 		frameInfo ? ['-start_number', String(frameInfo.startNumber)] : null,
 		frameInfo
@@ -177,6 +177,7 @@ export const stitchFramesToHLS = async (options: {
 		// Ignore metadata that may come from remote media
 		isAudioOnly ? null : ['-map_metadata', '-1'],
 		options.force ? '-y' : null,
+		['-f', 'hls'],
 		['-hls_time', '4'],
 		['-hls_list_size', '2'],
 		['-http_persistent', '1'],
