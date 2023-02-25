@@ -4,6 +4,7 @@ import {
 	Player,
 	PlayerRef,
 	RenderLoading,
+	RenderPoster,
 } from '@remotion/player';
 import React, {
 	ComponentType,
@@ -17,6 +18,7 @@ import React, {
 import {AbsoluteFill} from 'remotion';
 import {playerExampleComp} from './CarSlideshow';
 import {Loading} from './Loading';
+import { TimeDisplay } from './TimeDisplay';
 
 const fps = 30;
 
@@ -49,6 +51,17 @@ const ControlsOnly: React.FC<{
 	setSpaceKeyToPlayOrPause: React.Dispatch<React.SetStateAction<boolean>>;
 	moveToBeginningWhenEnded: boolean;
 	setMoveToBeginningWhenEnded: React.Dispatch<React.SetStateAction<boolean>>;
+	showPosterWhenUnplayed: boolean;
+	setshowPosterWhenUnplayed: React.Dispatch<React.SetStateAction<boolean>>;
+	showPosterWhenEnded: boolean;
+	setShowPosterWhenEnded: React.Dispatch<React.SetStateAction<boolean>>;
+	showPosterWhenPaused: boolean;
+	setShowPosterWhenPaused: React.Dispatch<React.SetStateAction<boolean>>;
+	inFrame: number | null;
+	setInFrame: React.Dispatch<React.SetStateAction<number | null>>;
+	outFrame: number | null;
+	setOutFrame: React.Dispatch<React.SetStateAction<number | null>>;
+	durationInFrames: number;
 }> = ({
 	playerRef: ref,
 	color,
@@ -68,6 +81,17 @@ const ControlsOnly: React.FC<{
 	spaceKeyToPlayOrPause,
 	moveToBeginningWhenEnded,
 	setMoveToBeginningWhenEnded,
+	setshowPosterWhenUnplayed,
+	setShowPosterWhenEnded,
+	setShowPosterWhenPaused,
+	showPosterWhenUnplayed,
+	showPosterWhenEnded,
+	showPosterWhenPaused,
+	inFrame,
+	outFrame,
+	setInFrame,
+	setOutFrame,
+	durationInFrames,
 }) => {
 	const [logs, setLogs] = useState<string[]>(() => []);
 
@@ -80,7 +104,7 @@ const ControlsOnly: React.FC<{
 			setLogs((l) => [...l, 'pausing ' + Date.now()]);
 		};
 
-		const seekedCallbackLitener: CallbackListener<'seeked'> = (e) => {
+		const seekedCallbackListener: CallbackListener<'seeked'> = (e) => {
 			setLogs((l) => [...l, 'seeked to ' + e.detail.frame + ' ' + Date.now()]);
 		};
 
@@ -92,8 +116,13 @@ const ControlsOnly: React.FC<{
 			setLogs((l) => [...l, 'error ' + Date.now()]);
 		};
 
-		const timeupdateCallbackLitener: CallbackListener<'timeupdate'> = (e) => {
+		const timeupdateCallbackListener: CallbackListener<'timeupdate'> = (e) => {
 			setLogs((l) => [...l, 'timeupdate ' + e.detail.frame]);
+		};
+		const frameupdateCallbackListener: CallbackListener<'frameupdate'> = (
+			e
+		) => {
+			setLogs((l) => [...l, 'frameupdate ' + e.detail.frame]);
 		};
 
 		const ratechangeCallbackListener: CallbackListener<'ratechange'> = (e) => {
@@ -118,10 +147,11 @@ const ControlsOnly: React.FC<{
 
 		current.addEventListener('play', playCallbackListener);
 		current.addEventListener('pause', pausedCallbackLitener);
-		current.addEventListener('seeked', seekedCallbackLitener);
+		current.addEventListener('seeked', seekedCallbackListener);
 		current.addEventListener('ended', endedCallbackListener);
 		current.addEventListener('error', errorCallbackListener);
-		current.addEventListener('timeupdate', timeupdateCallbackLitener);
+		current.addEventListener('timeupdate', timeupdateCallbackListener);
+		current.addEventListener('frameupdate', frameupdateCallbackListener);
 		current.addEventListener('ratechange', ratechangeCallbackListener);
 		current.addEventListener(
 			'fullscreenchange',
@@ -131,10 +161,11 @@ const ControlsOnly: React.FC<{
 		return () => {
 			current.removeEventListener('play', playCallbackListener);
 			current.removeEventListener('pause', pausedCallbackLitener);
-			current.removeEventListener('seeked', seekedCallbackLitener);
+			current.removeEventListener('seeked', seekedCallbackListener);
 			current.removeEventListener('ended', endedCallbackListener);
 			current.removeEventListener('error', errorCallbackListener);
-			current.removeEventListener('timeupdate', timeupdateCallbackLitener);
+			current.removeEventListener('timeupdate', timeupdateCallbackListener);
+			current.removeEventListener('frameupdate', frameupdateCallbackListener);
 			current.removeEventListener('ratechange', ratechangeCallbackListener);
 			current.removeEventListener(
 				'fullscreenchange',
@@ -154,7 +185,9 @@ const ControlsOnly: React.FC<{
 					}}
 				/>
 			</div>
-
+			<div>
+				<TimeDisplay playerRef={ref} />
+			</div>
 			<div style={{paddingTop: '0.5rem'}}>
 				<div>
 					Select Text Color{' '}
@@ -173,7 +206,6 @@ const ControlsOnly: React.FC<{
 					/>
 				</div>
 			</div>
-
 			<br />
 			<button type="button" onClick={(e) => ref.current?.play(e)}>
 				▶️ Play
@@ -198,7 +230,6 @@ const ControlsOnly: React.FC<{
 			>
 				5 seconds forward
 			</button>
-
 			<br />
 			<button
 				type="button"
@@ -225,7 +256,6 @@ const ControlsOnly: React.FC<{
 			>
 				pause and seek
 			</button>
-
 			<br />
 			<button
 				type="button"
@@ -259,7 +289,6 @@ const ControlsOnly: React.FC<{
 			>
 				-1x speed
 			</button>
-
 			<br />
 			<button type="button" onClick={() => ref.current?.mute()}>
 				🔇 Mute
@@ -277,7 +306,6 @@ const ControlsOnly: React.FC<{
 				set volume to 1
 			</button>
 			<br />
-
 			<button type="button" onClick={() => setLoop((l) => !l)}>
 				loop = {String(loop)}
 			</button>
@@ -294,7 +322,19 @@ const ControlsOnly: React.FC<{
 				spaceKeyToPlayOrPause = {String(spaceKeyToPlayOrPause)}
 			</button>
 			<br />
-
+			<button
+				type="button"
+				onClick={() => setshowPosterWhenUnplayed((l) => !l)}
+			>
+				showPosterWhenUnplayed = {String(showPosterWhenUnplayed)}
+			</button>
+			<button type="button" onClick={() => setShowPosterWhenEnded((l) => !l)}>
+				showPosterWhenEnded = {String(showPosterWhenEnded)}
+			</button>
+			<button type="button" onClick={() => setShowPosterWhenPaused((l) => !l)}>
+				showPosterWhenPaused = {String(showPosterWhenPaused)}
+			</button>
+			<br />
 			<button
 				type="button"
 				onClick={() => setMoveToBeginningWhenEnded((l) => !l)}
@@ -312,7 +352,6 @@ const ControlsOnly: React.FC<{
 			>
 				log currentFrame
 			</button>
-
 			<button
 				type="button"
 				onClick={() =>
@@ -337,7 +376,48 @@ const ControlsOnly: React.FC<{
 			>
 				trigger error
 			</button>
-
+			<br />
+			<label>
+				<input
+					type="checkbox"
+					onChange={(e) => {
+						setInFrame(e.target.checked ? 0 : null);
+					}}
+				/>
+				Enable inFrame
+			</label>{' '}
+			{inFrame === null ? null : (
+				<input
+					type="range"
+					min={0}
+					max={durationInFrames}
+					step={1}
+					onChange={(e) => {
+						setInFrame(Number(e.target.value));
+					}}
+				/>
+			)}
+			<br />
+			<label>
+				<input
+					type="checkbox"
+					onChange={(e) => {
+						setOutFrame(e.target.checked ? 0 : null);
+					}}
+				/>
+				Enable outFrame
+			</label>{' '}
+			{outFrame === null ? null : (
+				<input
+					type="range"
+					min={0}
+					max={durationInFrames}
+					step={1}
+					onChange={(e) => {
+						setOutFrame(Number(e.target.value));
+					}}
+				/>
+			)}
 			<br />
 			<br />
 			{logs
@@ -363,6 +443,11 @@ const PlayerOnly: React.FC<
 		playbackRate: number;
 		spaceKeyToPlayOrPause: boolean;
 		moveToBeginningWhenEnded: boolean;
+		showPosterWhenPaused: boolean;
+		showPosterWhenEnded: boolean;
+		showPosterWhenUnplayed: boolean;
+		inFrame: number | null;
+		outFrame: number | null;
 	} & CompProps<any>
 > = ({
 	playerRef,
@@ -374,14 +459,25 @@ const PlayerOnly: React.FC<
 	playbackRate,
 	spaceKeyToPlayOrPause,
 	moveToBeginningWhenEnded,
+	showPosterWhenPaused,
+	showPosterWhenEnded,
+	showPosterWhenUnplayed,
+	inFrame,
+	outFrame,
 	...props
 }) => {
-	console.log('rerender');
 	const renderLoading: RenderLoading = useCallback(() => {
 		return (
 			<AbsoluteFill style={{backgroundColor: 'yellow'}}>
 				<Loading size={200} />
 				<div>Loading for 3 seconds...</div>
+			</AbsoluteFill>
+		);
+	}, []);
+	const renderPoster: RenderPoster = useCallback(() => {
+		return (
+			<AbsoluteFill style={{backgroundColor: 'yellow'}}>
+				<div>Click to play</div>
 			</AbsoluteFill>
 		);
 	}, []);
@@ -419,6 +515,13 @@ const PlayerOnly: React.FC<
 			playbackRate={playbackRate}
 			spaceKeyToPlayOrPause={spaceKeyToPlayOrPause}
 			moveToBeginningWhenEnded={moveToBeginningWhenEnded}
+			renderPoster={renderPoster}
+			initialFrame={30}
+			showPosterWhenUnplayed={showPosterWhenUnplayed}
+			showPosterWhenEnded={showPosterWhenEnded}
+			showPosterWhenPaused={showPosterWhenPaused}
+			inFrame={inFrame}
+			outFrame={outFrame}
 		/>
 	);
 };
@@ -439,6 +542,11 @@ export default ({
 	const [moveToBeginningWhenEnded, setMoveToBeginningWhenEnded] =
 		useState(true);
 	const [playbackRate, setPlaybackRate] = useState(1);
+	const [showPosterWhenUnplayed, setshowPosterWhenUnplayed] = useState(true);
+	const [showPosterWhenEnded, setShowPosterWhenEnded] = useState(true);
+	const [showPosterWhenPaused, setShowPosterWhenPaused] = useState(true);
+	const [inFrame, setInFrame] = useState<number | null>(null);
+	const [outFrame, setOutFrame] = useState<number | null>(null);
 
 	const ref = useRef<PlayerRef>(null);
 
@@ -463,6 +571,11 @@ export default ({
 				playbackRate={playbackRate}
 				spaceKeyToPlayOrPause={spaceKeyToPlayOrPause}
 				playerRef={ref}
+				showPosterWhenEnded={showPosterWhenEnded}
+				showPosterWhenPaused={showPosterWhenPaused}
+				showPosterWhenUnplayed={showPosterWhenUnplayed}
+				inFrame={inFrame}
+				outFrame={outFrame}
 			/>
 			<ControlsOnly
 				bgColor={bgColor}
@@ -483,6 +596,17 @@ export default ({
 				spaceKeyToPlayOrPause={spaceKeyToPlayOrPause}
 				title={title}
 				playerRef={ref}
+				setshowPosterWhenUnplayed={setshowPosterWhenUnplayed}
+				setShowPosterWhenEnded={setShowPosterWhenEnded}
+				setShowPosterWhenPaused={setShowPosterWhenPaused}
+				showPosterWhenUnplayed={showPosterWhenUnplayed}
+				showPosterWhenEnded={showPosterWhenEnded}
+				showPosterWhenPaused={showPosterWhenPaused}
+				setInFrame={setInFrame}
+				setOutFrame={setOutFrame}
+				inFrame={inFrame}
+				outFrame={outFrame}
+				durationInFrames={durationInFrames}
 			/>
 		</div>
 	);

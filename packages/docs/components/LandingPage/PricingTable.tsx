@@ -3,6 +3,7 @@ import { BlueButton } from "../layout/Button";
 import { Spacer } from "../layout/Spacer";
 import { PeriodSelector } from "../PeriodSelector";
 import { Triangle } from "../Triangle";
+import { DEV_SEAT_PRICE_INCREASE } from "./price-increase";
 import styles from "./pricing.module.css";
 
 enum Period {
@@ -73,7 +74,13 @@ export const PricingTable: React.FC<{}> = () => {
                       " "
                     )}
                   >
-                    {period === Period.Monthly ? "$15" : "$150"}
+                    {Date.now() < DEV_SEAT_PRICE_INCREASE
+                      ? period === Period.Monthly
+                        ? "$15"
+                        : "$150"
+                      : period === Period.Monthly
+                      ? "$25"
+                      : "$250"}
                   </div>
                   <div className={styles.perperiod}>
                     per {period === Period.Monthly ? "month" : "year"}
@@ -89,7 +96,17 @@ export const PricingTable: React.FC<{}> = () => {
                     </li>
                     <li>
                       <Bullet color="#79367a" />
-                      Access to prioritized support
+                      Prioritized support
+                      <a
+                        href="/docs/support"
+                        style={{
+                          color: "inherit",
+                          opacity: 0.5,
+                          marginLeft: 4,
+                        }}
+                      >
+                        <sup> see policy</sup>
+                      </a>
                     </li>
                     <li>
                       <Bullet color="#79367a" />
@@ -135,9 +152,14 @@ export const PricingTable: React.FC<{}> = () => {
                       month.
                     </li>
                   </ul>
-                  <div style={{ flex: 1 }} />
                 </div>
               </div>
+              {Date.now() > DEV_SEAT_PRICE_INCREASE ? (
+                <div className={styles.minimum}>
+                  Minimum plan amount:{" "}
+                  {period === Period.Monthly ? "$100/month" : "$1000/year"}
+                </div>
+              ) : null}
               <a
                 className={styles.pricinga}
                 href="https://companies.remotion.dev"
@@ -155,6 +177,26 @@ export const PricingTable: React.FC<{}> = () => {
           </div>
         </div>
       </div>
+      {Date.now() < DEV_SEAT_PRICE_INCREASE ? (
+        <p style={{ textAlign: "center", marginTop: 24 }}>
+          Subscribe before{" "}
+          {new Intl.DateTimeFormat("en-US", {
+            dateStyle: "full",
+          }).format(DEV_SEAT_PRICE_INCREASE)}{" "}
+          to lock in current prices -{" "}
+          <a href="https://companies.remotion.dev/price-increase">
+            <strong
+              style={{
+                color: "var(--blue-button-color)",
+                fontWeight: "bold",
+                textDecoration: "none",
+              }}
+            >
+              prices are increasing!
+            </strong>
+          </a>
+        </p>
+      ) : null}
       <p style={{ textAlign: "center", marginTop: 24 }}>
         Want a 15 minute call to evaluate if Remotion is right for you?{" "}
         <a
@@ -163,9 +205,23 @@ export const PricingTable: React.FC<{}> = () => {
             fontWeight: "bold",
             textDecoration: "none",
           }}
+          target="_blank"
           href="mailto:hi@remotion.dev"
         >
           Contact us
+        </a>
+      </p>
+      <p style={{ textAlign: "center", marginTop: 0 }}>
+        Looking for help realizing your project?{" "}
+        <a
+          style={{
+            color: "var(--blue-button-color)",
+            fontWeight: "bold",
+            textDecoration: "none",
+          }}
+          href="/experts"
+        >
+          Find experts
         </a>
       </p>
     </div>

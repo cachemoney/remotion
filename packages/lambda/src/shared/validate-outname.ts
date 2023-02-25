@@ -1,4 +1,6 @@
-import type {OutNameInput} from './constants';
+import type {AudioCodec, Codec} from '@remotion/renderer';
+import {RenderInternals, validateOutputFilename} from '@remotion/renderer';
+import type {OutNameInputWithoutCredentials} from './constants';
 import {validateBucketName} from './validate-bucketname';
 
 const validateS3Key = (s3Key: string) => {
@@ -17,12 +19,25 @@ const validateS3Key = (s3Key: string) => {
 	}
 };
 
-export const validateOutname = (outName: OutNameInput | undefined | null) => {
+export const validateOutname = (
+	outName: OutNameInputWithoutCredentials | undefined | null,
+	codec: Codec | null,
+	audioCodec: AudioCodec | null
+) => {
 	if (typeof outName === 'undefined' || outName === null) {
 		return;
 	}
 
 	if (typeof outName === 'string') {
+		if (codec) {
+			validateOutputFilename({
+				codec,
+				audioCodec,
+				extension: RenderInternals.getExtensionOfFilename(outName) as string,
+				preferLossless: false,
+			});
+		}
+
 		validateS3Key(outName);
 		return;
 	}

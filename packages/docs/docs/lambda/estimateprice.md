@@ -1,7 +1,9 @@
 ---
+image: /generated/articles-docs-lambda-estimateprice.png
 id: estimateprice
 title: estimatePrice()
 slug: /lambda/estimateprice
+crumb: "Lambda API"
 ---
 
 Calculates the AWS costs incurred for AWS Lambda given the region, execution duration and memory size based on the AWS Lambda pricing matrix.
@@ -28,7 +30,7 @@ console.log(
     durationInMiliseconds: 20000,
     memorySizeInMb: 2048,
     diskSizeInMb: 2048,
-    architecture: "x86_64",
+    architecture: "arm64",
     lambdasInvoked: 1,
   })
 ); // 0.00067

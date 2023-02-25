@@ -1,7 +1,9 @@
 ---
+image: /generated/articles-docs-lambda-renderstillonlambda.png
 id: renderstillonlambda
 title: renderStillOnLambda()
 slug: /lambda/renderstillonlambda
+crumb: "Lambda API"
 ---
 
 Renders a still image inside a lambda function and writes it to the specified output location.
@@ -15,8 +17,7 @@ If you want to render a still locally instead, use [`renderStill()`](/docs/rende
 ```tsx twoslash
 // @module: esnext
 // @target: es2017
-import { renderStillOnLambda } from "@remotion/lambda";
-// ---cut---
+import { renderStillOnLambda } from "@remotion/lambda/client";
 
 const { estimatedPrice, url, sizeInBytes } = await renderStillOnLambda({
   region: "us-east-1",
@@ -32,6 +33,10 @@ const { estimatedPrice, url, sizeInBytes } = await renderStillOnLambda({
   frame: 10,
 });
 ```
+
+:::note
+Preferrably import this function from `@remotion/lambda/client` to avoid problems [inside serverless functions](/docs/lambda/light-client).
+:::
 
 ## Arguments
 
@@ -70,7 +75,9 @@ One of:
 
 _optional - default `0`_
 
-Which frame of the composition should be rendered.
+Which frame of the composition should be rendered. Frames are zero-indexed.
+
+From v3.2.27, negative values are allowed, with `-1` being the last frame.
 
 ### `imageFormat?`
 
@@ -98,25 +105,37 @@ _optional - default `{}`_
 
 See [`renderMedia() -> envVariables`](/docs/renderer/render-media#envvariables).
 
+### `forceHeight`
+
+_optional, available from v3.2.40_
+
+Overrides the default composition height.
+
+### `forceWidth`
+
+_optional, available from v3.2.40_
+
+Overrides the default composition width.
+
+### `scale`
+
+_optional_
+
+Scales the output dimensions by a factor. See [Scaling](/docs/scaling) to learn more about this feature.
+
 ### `outName`
 
 _optional_
 
-The file name of the media output.
-
 It can either be:
 
-- `undefined` - it will default to `out` plus the appropriate file extension, for example: `renders/${renderId}/out.mp4`. The outName must match `/^([0-9a-zA-Z-!_.*'()/]+)$/g`.
+- `undefined` - it will default to `out` plus the appropriate file extension, for example: `renders/${renderId}/out.mp4`.
 - A `string` - it will get saved to the same S3 bucket as your site under the key `renders/{renderId}/{outName}`.
-- An object of shape `{ key: string; bucketName: string }`. This will save the render to an arbitrary bucket with an arbitrary key. Note the following restrictions:
-  - You must extend the default Remotion policy to allow read and write access to that bucket.
-  - The bucket must be in the same region.
-  - When calling APIs such as `downloadMedia()` or `getRenderProgress()`, you must pass the bucket name where the site resides in, not the bucket where the video gets saved.
-  - The `key` must match `/^([0-9a-zA-Z-!_.*'()]+)$/g` and the bucketName must match `/^(?=^.{3,63}$)(?!^(\d+\.)+\d+$)(^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$)/`.
+- An object if you want to render to a different bucket or cloud provider - [see here for detailed instructions](/docs/lambda/custom-destination)
 
 ### `timeoutInMilliseconds?`
 
-A number describing how long the render may take to resolve all `delayRender()` calls before it times out. Default: `30000`
+A number describing how long the render may take to resolve all [`delayRender()`](/docs/delay-render) calls [before it times out](/docs/timeout). Default: `30000`
 
 ### `downloadBehavior`
 
@@ -160,6 +179,12 @@ Accepted values:
 :::note
 The default for Lambda is `"swangle"`, but `null` elsewhere.
 :::
+
+### `forceBucketName`
+
+_optional, available from v3.3.42_
+
+Specify a specific bucket name to be used. [This is not recommended](/docs/lambda/multiple-buckets), instead let Remotion discover the right bucket automatically.
 
 ## Return value
 

@@ -1,14 +1,15 @@
 ---
+image: /generated/articles-docs-miscellaneous-snippets-player-in-iframe.png
 title: "Embedding a <Player> into an <iframe>"
+crumb: "Snippets"
 ---
 
 :::info
-Credit to [Marcus Stenbeck](https://twitter.com/marcusstenbeck) for creating this snippet.
+Credit to [@marcusstenbeck](https://twitter.com/marcusstenbeck) for creating this snippet.
 :::
 
-This snippet is useful if you want to isolate the global styles of your homepage from the global styles of the [`<Player>`](/docs/player), for example if you are using TailwindCSS.
+This snippet is useful if you want to isolate the global styles of your homepage from the global styles of the [`<Player>`](/docs/player).
 
-  
 ```diff title="Usage"
 - import { Player } from '@remotion/player';
 + import { IframePlayer } from 'path/to/IframePlayer';
@@ -18,21 +19,27 @@ This snippet is useful if you want to isolate the global styles of your homepage
 ```
 
 ```tsx title="IframePlayer.tsx"
-import { Player } from '@remotion/player';
-import React, { ComponentProps, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { Player, PlayerProps, PlayerRef } from "@remotion/player";
+import React, {
+  forwardRef,
+  MutableRefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import ReactDOM from "react-dom";
 
-const className = '__player';
+const className = "__player";
 const borderNone: React.CSSProperties = {
-  border: 'none',
+  border: "none",
 };
 
-export const IframedPlayer: React.FC<ComponentProps<typeof Player>> = (
-  props
+const IframePlayerWithoutRef = <T,>(
+  props: PlayerProps<T>,
+  ref: MutableRefObject<PlayerRef>
 ) => {
   const [contentRef, setContentRef] = useState<HTMLIFrameElement | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const playerRef = useRef<HTMLDivElement | null>(null);
 
   const mountNode = contentRef?.contentDocument?.body;
 
@@ -40,8 +47,8 @@ export const IframedPlayer: React.FC<ComponentProps<typeof Player>> = (
     if (!contentRef || !contentRef.contentDocument) return;
 
     // Remove margin and padding so player fits snugly
-    contentRef.contentDocument.body.style.margin = '0';
-    contentRef.contentDocument.body.style.padding = '0';
+    contentRef.contentDocument.body.style.margin = "0";
+    contentRef.contentDocument.body.style.padding = "0";
 
     // When player div is resized also resize iframe
     resizeObserverRef.current = new ResizeObserver(([playerEntry]) => {
@@ -52,7 +59,7 @@ export const IframedPlayer: React.FC<ComponentProps<typeof Player>> = (
 
     // The remotion player element
     const playerElement = contentRef.contentDocument.querySelector(
-      '.' + className
+      "." + className
     );
     if (!playerElement) {
       throw new Error(
@@ -71,19 +78,22 @@ export const IframedPlayer: React.FC<ComponentProps<typeof Player>> = (
     };
   }, [contentRef]);
 
-  const combinedClassName = `${className} ${props.className ?? ''}`.trim();
+  const combinedClassName = `${className} ${props.className ?? ""}`.trim();
 
   return (
     // eslint-disable-next-line @remotion/warn-native-media-tag
     <iframe ref={setContentRef} style={borderNone}>
       {mountNode &&
         ReactDOM.createPortal(
-          <Player {...props} className={combinedClassName} />,
+          // @ts-expect-error PlayerProps are incorrectly typed
+          <Player<T> {...props} ref={ref} className={combinedClassName} />,
           mountNode
         )}
     </iframe>
   );
 };
+
+export const IframePlayer = forwardRef(IframePlayerWithoutRef);
 ```
 
 ## See also

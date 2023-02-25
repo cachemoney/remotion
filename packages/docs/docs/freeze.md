@@ -1,6 +1,8 @@
 ---
+image: /generated/articles-docs-freeze.png
 id: freeze
 title: <Freeze>
+crumb: "API"
 ---
 
 import { FreezeExample } from "../components/FreezeExample/FreezeExample";
@@ -47,5 +49,5 @@ const MyVideo = () => {
 ## See also
 
 - [Source code for this component](https://github.com/remotion-dev/remotion/blob/main/packages/core/src/freeze.tsx)
-- [`<Video/>` Playback speed](/docs/video#controlling-playback-speed)
+- [`<Video/>` Playback speed](/docs/video#playbackrate)
 - [`useCurrentFrame()`](/docs/use-current-frame)

@@ -4,11 +4,14 @@ import React, {
 	useContext,
 	useEffect,
 	useImperativeHandle,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 } from 'react';
 import {getAbsoluteSrc} from '../absolute-src';
 import {CompositionManager} from '../CompositionManager';
+import {continueRender, delayRender} from '../delay-render';
+import {useRemotionEnvironment} from '../get-environment';
 import {random} from '../random';
 import {SequenceContext} from '../Sequence';
 import {useTimelinePosition} from '../timeline-position-state';
@@ -17,9 +20,13 @@ import {evaluateVolume} from '../volume-prop';
 import type {RemotionAudioProps} from './props';
 import {useFrameForVolumeProp} from './use-audio-frame';
 
+type AudioForRenderingProps = RemotionAudioProps & {
+	onDuration: (src: string, durationInSeconds: number) => void;
+};
+
 const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 	HTMLAudioElement,
-	RemotionAudioProps
+	AudioForRenderingProps
 > = (props, ref) => {
 	const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -28,6 +35,7 @@ const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 	const frame = useCurrentFrame();
 	const sequenceContext = useContext(SequenceContext);
 	const {registerAsset, unregisterAsset} = useContext(CompositionManager);
+	const environment = useRemotionEnvironment();
 
 	// Generate a string that's as unique as possible for this asset
 	// but at the same time the same on all threads
@@ -39,17 +47,28 @@ const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 		[props.src, sequenceContext]
 	);
 
-	const {volume: volumeProp, playbackRate, ...nativeProps} = props;
+	const {
+		volume: volumeProp,
+		playbackRate,
+		allowAmplificationDuringRender,
+		onDuration,
+		...nativeProps
+	} = props;
 
 	const volume = evaluateVolume({
 		volume: volumeProp,
 		frame: volumePropFrame,
 		mediaVolume: 1,
+		allowAmplificationDuringRender: allowAmplificationDuringRender ?? false,
 	});
 
-	useImperativeHandle(ref, () => {
-		return audioRef.current as HTMLVideoElement;
-	});
+	useImperativeHandle(
+		ref,
+		() => {
+			return audioRef.current as HTMLVideoElement;
+		},
+		[]
+	);
 
 	useEffect(() => {
 		if (!props.src) {
@@ -76,6 +95,7 @@ const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 			volume,
 			mediaFrame: frame,
 			playbackRate: props.playbackRate ?? 1,
+			allowAmplificationDuringRender: allowAmplificationDuringRender ?? false,
 		});
 		return () => unregisterAsset(id);
 	}, [
@@ -90,7 +110,44 @@ const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 		frame,
 		playbackRate,
 		props.playbackRate,
+		allowAmplificationDuringRender,
 	]);
+
+	const {src} = props;
+
+	// If audio source switches, make new handle
+	if (environment === 'rendering') {
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		useLayoutEffect(() => {
+			if (process.env.NODE_ENV === 'test') {
+				return;
+			}
+
+			const newHandle = delayRender('Loading <Audio> duration with src=' + src);
+			const {current} = audioRef;
+
+			const didLoad = () => {
+				if (current?.duration) {
+					onDuration(src as string, current.duration);
+				}
+
+				continueRender(newHandle);
+			};
+
+			if (current?.duration) {
+				onDuration(src as string, current.duration);
+				continueRender(newHandle);
+			} else {
+				current?.addEventListener('loadedmetadata', didLoad, {once: true});
+			}
+
+			// If tag gets unmounted, clear pending handles because video metadata is not going to load
+			return () => {
+				current?.removeEventListener('loadedmetadata', didLoad);
+				continueRender(newHandle);
+			};
+		}, [src, onDuration]);
+	}
 
 	return <audio ref={audioRef} {...nativeProps} />;
 };
@@ -98,5 +155,5 @@ const AudioForRenderingRefForwardingFunction: React.ForwardRefRenderFunction<
 export const AudioForRendering = forwardRef(
 	AudioForRenderingRefForwardingFunction
 ) as ForwardRefExoticComponent<
-	RemotionAudioProps & RefAttributes<HTMLAudioElement>
+	AudioForRenderingProps & RefAttributes<HTMLAudioElement>
 >;

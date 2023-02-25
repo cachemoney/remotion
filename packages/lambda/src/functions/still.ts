@@ -7,6 +7,7 @@ import {VERSION} from 'remotion/version';
 import {estimatePrice} from '../api/estimate-price';
 import {getOrCreateBucket} from '../api/get-or-create-bucket';
 import {getLambdaClient} from '../shared/aws-clients';
+import {cleanupSerializedInputProps} from '../shared/cleanup-serialized-input-props';
 import type {
 	LambdaPayload,
 	LambdaPayloads,
@@ -17,14 +18,20 @@ import {
 	MAX_EPHEMERAL_STORAGE_IN_MB,
 	renderMetadataKey,
 } from '../shared/constants';
+import {convertToServeUrl} from '../shared/convert-to-serve-url';
+import {deserializeInputProps} from '../shared/deserialize-input-props';
 import {getServeUrlHash} from '../shared/make-s3-url';
 import {randomHash} from '../shared/random-hash';
 import {validateDownloadBehavior} from '../shared/validate-download-behavior';
 import {validateOutname} from '../shared/validate-outname';
 import {validatePrivacy} from '../shared/validate-privacy';
-import {getExpectedOutName} from './helpers/expected-out-name';
+import {
+	getCredentialsFromOutName,
+	getExpectedOutName,
+} from './helpers/expected-out-name';
 import {formatCostsInfo} from './helpers/format-costs-info';
 import {getBrowserInstance} from './helpers/get-browser-instance';
+import {executablePath} from './helpers/get-chromium-executable-path';
 import {getCurrentArchitecture} from './helpers/get-current-architecture';
 import {getCurrentRegionInFunction} from './helpers/get-current-region';
 import {getOutputUrlFromMetadata} from './helpers/get-output-url-from-metadata';
@@ -51,41 +58,57 @@ const innerStillHandler = async (
 	if (lambdaParams.version !== VERSION) {
 		if (!lambdaParams.version) {
 			throw new Error(
-				`Version mismatch: When calling renderStillOnLambda(), the deployed Lambda function had version ${VERSION} but the @remotion/lambda package is an older version. Align the versions.`
+				`Version mismatch: When calling renderStillOnLambda(), you called the function ${process.env.AWS_LAMBDA_FUNCTION_NAME} which has the version ${VERSION} but the @remotion/lambda package is an older version. Deploy a new function and use it to call renderStillOnLambda(). See: https://www.remotion.dev/docs/lambda/upgrading`
 			);
 		}
 
 		throw new Error(
-			`Version mismatch: When calling renderStillOnLambda(), get deployed Lambda function had version ${VERSION} and the @remotion/lambda package has version ${lambdaParams.version}. Align the versions.`
+			`Version mismatch: When calling renderStillOnLambda(), you passed ${process.env.AWS_LAMBDA_FUNCTION_NAME} as the function, which has the version ${VERSION}, but the @remotion/lambda package you used to invoke the function has version ${lambdaParams.version}. Deploy a new function and use it to call renderStillOnLambda(). See: https://www.remotion.dev/docs/lambda/upgrading`
 		);
 	}
 
 	validateDownloadBehavior(lambdaParams.downloadBehavior);
 	validatePrivacy(lambdaParams.privacy);
-	validateOutname(lambdaParams.outName);
+	validateOutname(lambdaParams.outName, null, null);
 
 	const start = Date.now();
 
-	const [{bucketName}, browserInstance] = await Promise.all([
-		getOrCreateBucket({
-			region: getCurrentRegionInFunction(),
-		}),
+	const [bucketName, browserInstance] = await Promise.all([
+		lambdaParams.bucketName ??
+			getOrCreateBucket({
+				region: getCurrentRegionInFunction(),
+			}).then((b) => b.bucketName),
 		getBrowserInstance(
 			RenderInternals.isEqualOrBelowLogLevel(lambdaParams.logLevel, 'verbose'),
 			lambdaParams.chromiumOptions ?? {}
 		),
 	]);
+
 	const outputDir = RenderInternals.tmpDir('remotion-render-');
 
 	const outputPath = path.join(outputDir, 'output');
 
 	const downloadMap = RenderInternals.makeDownloadMap();
 
+	const region = getCurrentRegionInFunction();
+	const inputProps = await deserializeInputProps({
+		bucketName,
+		expectedBucketOwner: options.expectedBucketOwner,
+		region,
+		serialized: lambdaParams.inputProps,
+	});
+
+	const serveUrl = convertToServeUrl({
+		urlOrId: lambdaParams.serveUrl,
+		region,
+		bucketName,
+	});
+
 	const composition = await validateComposition({
-		serveUrl: lambdaParams.serveUrl,
+		serveUrl,
 		browserInstance,
 		composition: lambdaParams.composition,
-		inputProps: lambdaParams.inputProps,
+		inputProps,
 		envVariables: lambdaParams.envVariables,
 		ffmpegExecutable: null,
 		ffprobeExecutable: null,
@@ -93,6 +116,8 @@ const innerStillHandler = async (
 		timeoutInMilliseconds: lambdaParams.timeoutInMilliseconds,
 		port: null,
 		downloadMap,
+		forceHeight: lambdaParams.forceHeight,
+		forceWidth: lambdaParams.forceWidth,
 	});
 
 	const renderMetadata: RenderMetadata = {
@@ -102,10 +127,9 @@ const innerStillHandler = async (
 		compositionId: lambdaParams.composition,
 		estimatedTotalLambdaInvokations: 1,
 		estimatedRenderLambdaInvokations: 1,
-		siteId: getServeUrlHash(lambdaParams.serveUrl),
+		siteId: getServeUrlHash(serveUrl),
 		totalChunks: 1,
 		type: 'still',
-		usesOptimizationProfile: false,
 		imageFormat: lambdaParams.imageFormat,
 		inputProps: lambdaParams.inputProps,
 		lambdaVersion: VERSION,
@@ -114,6 +138,10 @@ const innerStillHandler = async (
 		region: getCurrentRegionInFunction(),
 		renderId,
 		outName: lambdaParams.outName ?? undefined,
+		privacy: lambdaParams.privacy,
+		everyNthFrame: 1,
+		frameRange: [lambdaParams.frame, lambdaParams.frame],
+		audioCodec: null,
 	};
 
 	await lambdaWriteFile({
@@ -124,17 +152,21 @@ const innerStillHandler = async (
 		privacy: 'private',
 		expectedBucketOwner: options.expectedBucketOwner,
 		downloadBehavior: null,
+		customCredentials: null,
 	});
 
 	await renderStill({
 		composition,
 		output: outputPath,
-		serveUrl: lambdaParams.serveUrl,
+		serveUrl,
 		dumpBrowserLogs: false,
 		envVariables: lambdaParams.envVariables,
-		frame: lambdaParams.frame,
+		frame: RenderInternals.convertToPositiveFrameIndex({
+			frame: lambdaParams.frame,
+			durationInFrames: composition.durationInFrames,
+		}),
 		imageFormat: lambdaParams.imageFormat as StillImageFormat,
-		inputProps: lambdaParams.inputProps,
+		inputProps,
 		overwrite: false,
 		puppeteerInstance: browserInstance,
 		quality: lambdaParams.quality,
@@ -142,11 +174,13 @@ const innerStillHandler = async (
 		scale: lambdaParams.scale,
 		timeoutInMilliseconds: lambdaParams.timeoutInMilliseconds,
 		downloadMap,
+		browserExecutable: executablePath(),
 	});
 
-	const {key, renderBucketName} = getExpectedOutName(
+	const {key, renderBucketName, customCredentials} = getExpectedOutName(
 		renderMetadata,
-		bucketName
+		bucketName,
+		getCredentialsFromOutName(lambdaParams.outName)
 	);
 
 	const {size} = await fs.promises.stat(outputPath);
@@ -159,8 +193,17 @@ const innerStillHandler = async (
 		expectedBucketOwner: options.expectedBucketOwner,
 		region: getCurrentRegionInFunction(),
 		downloadBehavior: lambdaParams.downloadBehavior,
+		customCredentials,
 	});
-	await fs.promises.rm(outputPath, {recursive: true});
+
+	await Promise.all([
+		fs.promises.rm(outputPath, {recursive: true}),
+		cleanupSerializedInputProps({
+			bucketName,
+			region: getCurrentRegionInFunction(),
+			serialized: lambdaParams.inputProps,
+		}),
+	]);
 
 	const estimatedPrice = estimatePrice({
 		durationInMiliseconds: Date.now() - start + 100,
@@ -174,7 +217,11 @@ const innerStillHandler = async (
 	});
 
 	return {
-		output: getOutputUrlFromMetadata(renderMetadata, bucketName),
+		output: getOutputUrlFromMetadata(
+			renderMetadata,
+			bucketName,
+			customCredentials
+		),
 		size,
 		bucketName,
 		estimatedPrice: formatCostsInfo(estimatedPrice),
@@ -216,11 +263,17 @@ export const stillHandler = async (
 					Payload: JSON.stringify(retryPayload),
 				})
 			);
-			const {bucketName} = await getOrCreateBucket({
-				region: getCurrentRegionInFunction(),
-			});
+			const bucketName =
+				params.bucketName ??
+				(
+					await getOrCreateBucket({
+						region: getCurrentRegionInFunction(),
+					})
+				).bucketName;
 
-			writeLambdaError({
+			// `await` elided on purpose here; using `void` to mark it as intentional
+			// eslint-disable-next-line no-void
+			void writeLambdaError({
 				bucketName,
 				errorInfo: {
 					chunk: null,

@@ -1,12 +1,17 @@
-import type {BundleOptions} from '@remotion/bundler';
+import type {LegacyBundleOptions} from '@remotion/bundler';
 import {bundle, BundlerInternals} from '@remotion/bundler';
 import {RenderInternals} from '@remotion/renderer';
 import {ConfigInternals} from './config';
 import {Log} from './log';
 import {quietFlagProvided} from './parse-command-line';
+import type {
+	BundlingState,
+	CopyingState,
+	SymbolicLinksState,
+} from './progress-bar';
 import {
 	createOverwriteableCliOutput,
-	makeBundlingProgress,
+	makeBundlingAndCopyProgress,
 } from './progress-bar';
 import type {RenderStep} from './step';
 
@@ -14,10 +19,12 @@ export const bundleOnCliOrTakeServeUrl = async ({
 	fullPath,
 	remotionRoot,
 	steps,
+	publicDir,
 }: {
 	fullPath: string;
 	remotionRoot: string;
 	steps: RenderStep[];
+	publicDir: string | null;
 }): Promise<{
 	urlOrBundle: string;
 	cleanup: () => Promise<void>;
@@ -29,7 +36,7 @@ export const bundleOnCliOrTakeServeUrl = async ({
 		};
 	}
 
-	const bundled = await bundleOnCli({fullPath, remotionRoot, steps});
+	const bundled = await bundleOnCli({fullPath, remotionRoot, steps, publicDir});
 
 	return {
 		urlOrBundle: bundled,
@@ -41,33 +48,81 @@ export const bundleOnCli = async ({
 	fullPath,
 	steps,
 	remotionRoot,
+	publicDir,
 }: {
 	fullPath: string;
 	steps: RenderStep[];
 	remotionRoot: string;
+	publicDir: string | null;
 }) => {
 	const shouldCache = ConfigInternals.getWebpackCaching();
 
+	const symlinkState: SymbolicLinksState = {
+		symlinks: [],
+	};
+
 	const onProgress = (progress: number) => {
+		bundlingState = {
+			progress: progress / 100,
+			steps,
+			doneIn: null,
+		};
 		bundlingProgress.update(
-			makeBundlingProgress({
-				progress: progress / 100,
-				steps,
-				doneIn: null,
+			makeBundlingAndCopyProgress({
+				bundling: bundlingState,
+				copying: copyingState,
+				symLinks: symlinkState,
 			})
 		);
 	};
 
-	const options: BundleOptions = {
+	let copyingState: CopyingState = {
+		bytes: 0,
+		doneIn: null,
+	};
+
+	let copyStart: number | null = null;
+
+	const updateProgress = (newline: boolean) => {
+		bundlingProgress.update(
+			makeBundlingAndCopyProgress({
+				bundling: bundlingState,
+				copying: copyingState,
+				symLinks: symlinkState,
+			}) + (newline ? '\n' : '')
+		);
+	};
+
+	const onPublicDirCopyProgress = (bytes: number) => {
+		if (copyStart === null) {
+			copyStart = Date.now();
+		}
+
+		copyingState = {
+			bytes,
+			doneIn: null,
+		};
+		updateProgress(false);
+	};
+
+	const onSymlinkDetected = (absPath: string) => {
+		symlinkState.symlinks.push(absPath);
+		updateProgress(false);
+	};
+
+	const options: LegacyBundleOptions = {
 		enableCaching: shouldCache,
 		webpackOverride: ConfigInternals.getWebpackOverrideFn() ?? ((f) => f),
 		rootDir: remotionRoot,
+		publicDir,
+		onPublicDirCopyProgress,
+		onSymlinkDetected,
 	};
 
 	const [hash] = BundlerInternals.getConfig({
 		outDir: '',
 		entryPoint: fullPath,
-		onProgressUpdate: onProgress,
+		onProgress,
 		options,
 		resolvedRemotionRoot: remotionRoot,
 	});
@@ -90,26 +145,36 @@ export const bundleOnCli = async ({
 	const bundleStartTime = Date.now();
 	const bundlingProgress = createOverwriteableCliOutput(quietFlagProvided());
 
-	const bundled = await bundle(
-		fullPath,
-		(progress) => {
-			bundlingProgress.update(
-				makeBundlingProgress({
-					progress: progress / 100,
-					steps,
-					doneIn: null,
-				})
-			);
+	let bundlingState: BundlingState = {
+		progress: 0,
+		steps,
+		doneIn: null,
+	};
+
+	const bundled = await bundle({
+		entryPoint: fullPath,
+		onProgress: (progress) => {
+			bundlingState = {
+				progress: progress / 100,
+				steps,
+				doneIn: null,
+			};
+			updateProgress(false);
 		},
-		options
-	);
-	bundlingProgress.update(
-		makeBundlingProgress({
-			progress: 1,
-			steps,
-			doneIn: Date.now() - bundleStartTime,
-		}) + '\n'
-	);
+		...options,
+	});
+
+	bundlingState = {
+		progress: 1,
+		steps,
+		doneIn: Date.now() - bundleStartTime,
+	};
+	copyingState = {
+		...copyingState,
+		doneIn: copyStart ? Date.now() - copyStart : null,
+	};
+	updateProgress(true);
+
 	Log.verbose('Bundled under', bundled);
 	const cacheExistedAfter =
 		BundlerInternals.cacheExists(remotionRoot, 'production', hash) === 'exists';

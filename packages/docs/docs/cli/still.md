@@ -1,6 +1,8 @@
 ---
+image: /generated/articles-docs-cli-still.png
 title: npx remotion still
 sidebar_label: still
+crumb: CLI Reference
 ---
 
 import {AngleChangelog} from '../../components/AngleChangelog';
@@ -10,8 +12,11 @@ _Available from v2.3._
 Render a still frame based on the entry point, the composition ID and save it to the output location.
 
 ```bash
-npx remotion still <entry-file> <composition-id> <output-location>
+npx remotion still <entry-file> [<composition-id>] [<output-location>]
 ```
+
+If `output-location` is not passed, the still will be rendered into the `out` folder.  
+If `composition-id` is also not passed, Remotion will let you select a composition.
 
 ## Flags
 
@@ -53,7 +58,8 @@ Specify a location for a dotenv file. Default `.env`.
 
 ### `--frame`
 
-Which frame should be rendered. Example `--frame=10`. Default `0`.
+Which frame should be rendered. Example `--frame=10`. Default `0`.  
+From v3.2.27, negative values are allowed, with `-1` being the last frame.
 
 ### `--bundle-cache`
 
@@ -67,6 +73,10 @@ Which frame should be rendered. Example `--frame=10`. Default `0`.
 
 [Set a custom HTTP server port to serve the Webpack bundle](/docs/config#setPort). If not defined, Remotion will try to find a free port.
 
+### `--public-dir` <AvailableFrom v="3.2.13" />
+
+[Define the location of the `public/` directory.](/docs/config#setpublicdir). If not defined, Remotion will assume the location is the `public` folder in your Remotion root.
+
 ### `--ffmpeg-executable`
 
 [Set a custom `ffmpeg` executable](/docs/config#setFfmpegExecutable). If not defined, a `ffmpeg` executable will be searched in `PATH`.
@@ -77,25 +87,23 @@ Which frame should be rendered. Example `--frame=10`. Default `0`.
 
 ### `--timeout`
 
-Define how long a single frame may take to resolve all [`delayRender()`](/docs/delay-render) calls before it times out in milliseconds. Default: `30000`.
+Define how long a single frame may take to resolve all [`delayRender()`](/docs/delay-render) calls [before it times out](/docs/timeout) in milliseconds. Default: `30000`.
 
 :::info
 Not to be confused with the [`--timeout` flag when deploying a Lambda function](/docs/lambda/cli/functions#--timeout).
 :::
 
-### `--ignore-certificate-errors`
+### `--ignore-certificate-errors` <AvailableFrom v="2.6.5" />
 
-Results in invalid SSL certificates in Chrome, such as self-signed ones, being ignored. Available since v2.6.5.
+Results in invalid SSL certificates in Chrome, such as self-signed ones, being ignored.
 
-### `--disable-web-security`
+### `--disable-web-security` <AvailableFrom v="2.6.5" />
 
 This will most notably disable CORS in Chrome among other security features.
-Available since v2.6.5.
 
-### `--disable-headless`
+### `--disable-headless` <AvailableFrom v="2.6.5" />
 
 Opens an actual browser during rendering to observe the render.
-Available since v2.6.5.
 
 ### `--gl`
 

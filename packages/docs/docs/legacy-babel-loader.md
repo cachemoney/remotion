@@ -1,9 +1,12 @@
 ---
+image: /generated/articles-docs-legacy-babel-loader.png
 title: Using legacy Babel transpilation
 id: legacy-babel
+crumb: "How To"
 ---
 
 import Tabs from "@theme/Tabs";
+import TabItem from '@theme/TabItem';
 
 In Remotion 2.0, the traditional transpilation of Javascript and Typescript using the `babel-loader` has been replaced by the faster `esbuild-loader` by default.
 
@@ -52,7 +55,7 @@ import { Config } from "remotion";
 // ---cut---
 import { replaceLoadersWithBabel } from "@remotion/babel-loader";
 
-Config.Bundling.overrideWebpackConfig((currentConfiguration) => {
+Config.overrideWebpackConfig((currentConfiguration) => {
   return replaceLoadersWithBabel(currentConfiguration);
 });
 ```
@@ -71,7 +74,8 @@ export const webpackOverride: WebpackOverrideFn = (c) => c;
 import { bundle } from "@remotion/bundler";
 import { replaceLoadersWithBabel } from "@remotion/babel-loader";
 
-await bundle(require.resolve("./src/index.ts"), () => undefined, {
+await bundle({
+  entryPoint: require.resolve("./src/index.ts"),
   webpackOverride: (config) => replaceLoadersWithBabel(config),
 });
 ```

@@ -1,10 +1,11 @@
 import {createHash} from 'crypto';
 import ReactDOM from 'react-dom';
-import type {WebpackConfiguration, WebpackOverrideFn} from 'remotion';
 import {Internals} from 'remotion';
 import webpack, {ProgressPlugin} from 'webpack';
 import type {LoaderOptions} from './esbuild-loader/interfaces';
 import {ReactFreshWebpackPlugin} from './fast-refresh';
+import {jsonStringifyWithCircularReferences} from './stringify-with-circular-references';
+import type {WebpackConfiguration, WebpackOverrideFn} from './types';
 import {getWebpackCacheName} from './webpack-cache';
 import esbuild = require('esbuild');
 
@@ -39,26 +40,28 @@ export const webpackConfig = ({
 	outDir,
 	environment,
 	webpackOverride = (f) => f,
-	onProgressUpdate,
+	onProgress,
 	enableCaching = true,
 	envVariables,
 	maxTimelineTracks,
 	entryPoints,
 	remotionRoot,
 	keyboardShortcutsEnabled,
+	poll,
 }: {
 	entry: string;
 	userDefinedComponent: string;
 	outDir: string;
 	environment: 'development' | 'production';
 	webpackOverride: WebpackOverrideFn;
-	onProgressUpdate?: (f: number) => void;
+	onProgress?: (f: number) => void;
 	enableCaching?: boolean;
 	envVariables: Record<string, string>;
 	maxTimelineTracks: number;
 	keyboardShortcutsEnabled: boolean;
 	entryPoints: string[];
 	remotionRoot: string;
+	poll: number | null;
 }): [string, WebpackConfiguration] => {
 	const conf: webpack.Configuration = webpackOverride({
 		optimization: {
@@ -73,14 +76,12 @@ export const webpackConfig = ({
 					  },
 		},
 		watchOptions: {
+			poll: poll ?? undefined,
 			aggregateTimeout: 0,
 			ignored: ['**/.git/**', '**/node_modules/**'],
 		},
 
-		devtool:
-			environment === 'development'
-				? 'cheap-module-source-map'
-				: 'cheap-module-source-map',
+		devtool: 'cheap-module-source-map',
 		entry: [
 			// Fast Refresh must come first,
 			// because setup-environment imports ReactDOM.
@@ -110,8 +111,8 @@ export const webpackConfig = ({
 				  ]
 				: [
 						new ProgressPlugin((p) => {
-							if (onProgressUpdate) {
-								onProgressUpdate(Number((p * 100).toFixed(2)));
+							if (onProgress) {
+								onProgress(Number((p * 100).toFixed(2)));
 							}
 						}),
 				  ],
@@ -124,7 +125,7 @@ export const webpackConfig = ({
 				environment === 'development' ? '[path][name][ext]' : '[hash][ext]',
 		},
 		resolve: {
-			extensions: ['.ts', '.tsx', '.js', '.jsx'],
+			extensions: ['.ts', '.tsx', '.web.js', '.js', '.jsx'],
 			alias: {
 				// Only one version of react
 				'react/jsx-runtime': require.resolve('react/jsx-runtime'),
@@ -184,7 +185,9 @@ export const webpackConfig = ({
 			],
 		},
 	});
-	const hash = createHash('md5').update(JSON.stringify(conf)).digest('hex');
+	const hash = createHash('md5')
+		.update(jsonStringifyWithCircularReferences(conf))
+		.digest('hex');
 	return [
 		hash,
 		{

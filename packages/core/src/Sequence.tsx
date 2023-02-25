@@ -1,5 +1,6 @@
 import React, {
 	createContext,
+	forwardRef,
 	useContext,
 	useEffect,
 	useMemo,
@@ -7,7 +8,7 @@ import React, {
 } from 'react';
 import {AbsoluteFill} from './AbsoluteFill';
 import {CompositionManager} from './CompositionManager';
-import {getRemotionEnvironment} from './get-environment';
+import {useRemotionEnvironment} from './get-environment';
 import {getTimelineClipName} from './get-timeline-clip-name';
 import {useNonce} from './nonce';
 import {TimelineContext, useTimelinePosition} from './timeline-position-state';
@@ -23,7 +24,7 @@ export type SequenceContextType = {
 
 export const SequenceContext = createContext<SequenceContextType | null>(null);
 
-type LayoutAndStyle =
+export type LayoutAndStyle =
 	| {
 			layout: 'none';
 	  }
@@ -34,22 +35,28 @@ type LayoutAndStyle =
 
 export type SequenceProps = {
 	children: React.ReactNode;
-	from: number;
+	from?: number;
 	durationInFrames?: number;
 	name?: string;
 	showInTimeline?: boolean;
 	showLoopTimesInTimeline?: number;
 } & LayoutAndStyle;
 
-export const Sequence: React.FC<SequenceProps> = ({
-	from,
-	durationInFrames = Infinity,
-	children,
-	name,
-	showInTimeline = true,
-	showLoopTimesInTimeline,
-	...other
-}) => {
+const SequenceRefForwardingFunction: React.ForwardRefRenderFunction<
+	HTMLDivElement,
+	SequenceProps
+> = (
+	{
+		from = 0,
+		durationInFrames = Infinity,
+		children,
+		name,
+		showInTimeline = true,
+		showLoopTimesInTimeline,
+		...other
+	},
+	ref
+) => {
 	const {layout = 'absolute-fill'} = other;
 	const [id] = useState(() => String(Math.random()));
 	const parentSequence = useContext(SequenceContext);
@@ -58,6 +65,7 @@ export const Sequence: React.FC<SequenceProps> = ({
 		? parentSequence.cumulatedFrom + parentSequence.relativeFrom
 		: 0;
 	const nonce = useNonce();
+	const environment = useRemotionEnvironment();
 
 	if (layout !== 'absolute-fill' && layout !== 'none') {
 		throw new TypeError(
@@ -134,7 +142,7 @@ export const Sequence: React.FC<SequenceProps> = ({
 	}, [children, name]);
 
 	useEffect(() => {
-		if (getRemotionEnvironment() !== 'preview') {
+		if (environment !== 'preview') {
 			return;
 		}
 
@@ -167,6 +175,7 @@ export const Sequence: React.FC<SequenceProps> = ({
 		showInTimeline,
 		nonce,
 		showLoopTimesInTimeline,
+		environment,
 	]);
 
 	const endThreshold = cumulatedFrom + from + durationInFrames - 1;
@@ -186,13 +195,27 @@ export const Sequence: React.FC<SequenceProps> = ({
 		};
 	}, [styleIfThere]);
 
+	if (ref !== null && layout === 'none') {
+		throw new TypeError(
+			'It is not supported to pass both a `ref` and `layout="none"` to <Sequence />.'
+		);
+	}
+
 	return (
 		<SequenceContext.Provider value={contextValue}>
 			{content === null ? null : layout === 'absolute-fill' ? (
-				<AbsoluteFill style={defaultStyle}>{content}</AbsoluteFill>
+				<AbsoluteFill ref={ref} style={defaultStyle}>
+					{content}
+				</AbsoluteFill>
 			) : (
 				content
 			)}
 		</SequenceContext.Provider>
 	);
 };
+
+/**
+ * A component that time-shifts its children and wraps them in an absolutely positioned <div>.
+ * @link https://www.remotion.dev/docs/sequence
+ */
+export const Sequence = forwardRef(SequenceRefForwardingFunction);

@@ -1,7 +1,9 @@
 ---
+image: /generated/articles-docs-gpu.png
 id: gpu
 title: Using the GPU
 sidebar_label: Using the GPU
+crumb: "Need for Speed"
 ---
 
 Some types of content in Remotion can benefit from a GPU being available on the machine that is used for rendering. That is:
@@ -15,7 +17,7 @@ slowdown in rendering time.
 
 ## Using `--gl=angle`
 
-Since Chrome 98, the GPU can be used in headless mode. Adding `--gl=angle` (or `{chromiumOptions: {gl: "angle"}}` for the Node.JS APIs), we find that a video rendered on a `<canvas>` on macOS is many times faster.
+Since Chrome 98, the GPU can be used in headless mode. Adding `--gl=angle` (or `{chromiumOptions: {gl: "angle"}}` for the Node.JS APIs), we find that a video rendered on a `<canvas>` on macOS is many times faster compared to rendering without the flag..
 
 However, there seems to be memory leakage from Chrome that may kill a long render, therefore we don't set `angle` as default. We recommend to render long videos that use the GPU in multiple parts.
 
@@ -27,6 +29,10 @@ For rendering content that can benefit from a GPU, you might want to choose a cl
 
 You can still render all types of content without having a GPU, it will just be slower.
 The graphics content will be software-emulated using [ANGLE](https://github.com/google/angle) or [SwiftShader](https://github.com/google/swiftshader) (when using Lambda).
+
+## Using the GPU on Lambda
+
+AWS Lambda instances have no GPU, so it is not possible to use it.
 
 ## What are your experiences?
 

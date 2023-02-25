@@ -2,11 +2,10 @@ import execa from 'execa';
 import {Internals} from 'remotion';
 import type {Codec} from './codec';
 import {DEFAULT_CODEC} from './codec';
-import {
-	getDefaultCrfForCodec,
-	validateSelectedCrfAndCodecCombination,
-} from './crf';
+import {validateQualitySettings} from './crf';
 import type {FfmpegExecutable} from './ffmpeg-executable';
+import {getExecutableBinary} from './ffmpeg-flags';
+import type {FfmpegOverrideFn} from './ffmpeg-override';
 import {getCodecName} from './get-codec-name';
 import {getProResProfileName} from './get-prores-profile-name';
 import type {ImageFormat} from './image-format';
@@ -34,10 +33,15 @@ type PreSticherOptions = {
 	verbose: boolean;
 	ffmpegExecutable: FfmpegExecutable | undefined;
 	imageFormat: ImageFormat;
+	ffmpegOverride: FfmpegOverrideFn;
 	signal: CancelSignal;
+	videoBitrate: string | null;
 };
 
-export const prespawnFfmpeg = async (options: PreSticherOptions) => {
+export const prespawnFfmpeg = async (
+	options: PreSticherOptions,
+	remotionRoot: string
+) => {
 	Internals.validateDimension(
 		options.height,
 		'height',
@@ -60,9 +64,12 @@ export const prespawnFfmpeg = async (options: PreSticherOptions) => {
 		codec,
 		scale: 1,
 	});
-	const crf = options.crf ?? getDefaultCrfForCodec(codec);
 	const pixelFormat = options.pixelFormat ?? DEFAULT_PIXEL_FORMAT;
-	await validateFfmpeg(options.ffmpegExecutable ?? null);
+	await validateFfmpeg(
+		options.ffmpegExecutable ?? null,
+		remotionRoot,
+		'ffmpeg'
+	);
 
 	const encoderName = getCodecName(codec);
 	const proResProfileName = getProResProfileName(codec, options.proResProfile);
@@ -81,14 +88,13 @@ export const prespawnFfmpeg = async (options: PreSticherOptions) => {
 		console.log('[verbose] encoder', encoderName);
 		console.log('[verbose] pixelFormat', pixelFormat);
 		if (supportsCrf) {
-			console.log('[verbose] crf', crf);
+			console.log('[verbose] crf', options.crf);
 		}
 
 		console.log('[verbose] codec', codec);
 		console.log('[verbose] proResProfileName', proResProfileName);
 	}
 
-	validateSelectedCrfAndCodecCombination(crf, codec);
 	validateSelectedPixelFormatAndCodecCombination(pixelFormat, codec);
 
 	const ffmpegArgs = [
@@ -105,13 +111,17 @@ export const prespawnFfmpeg = async (options: PreSticherOptions) => {
 		// and specified the video codec.
 		['-c:v', encoderName],
 		proResProfileName ? ['-profile:v', proResProfileName] : null,
-		supportsCrf ? ['-crf', String(crf)] : null,
 		['-pix_fmt', pixelFormat],
 
 		// Without explicitly disabling auto-alt-ref,
 		// transparent WebM generation doesn't work
 		pixelFormat === 'yuva420p' ? ['-auto-alt-ref', '0'] : null,
-		['-b:v', '1M'],
+		...validateQualitySettings({
+			crf: options.crf,
+			videoBitrate: options.videoBitrate,
+			codec,
+		}),
+
 		'-y',
 		options.outputLocation,
 	];
@@ -122,8 +132,18 @@ export const prespawnFfmpeg = async (options: PreSticherOptions) => {
 	}
 
 	const ffmpegString = ffmpegArgs.flat(2).filter(Boolean) as string[];
+	const finalFfmpegString = options.ffmpegOverride
+		? options.ffmpegOverride({type: 'pre-stitcher', args: ffmpegString})
+		: ffmpegString;
 
-	const task = execa(options.ffmpegExecutable ?? 'ffmpeg', ffmpegString);
+	const task = execa(
+		await getExecutableBinary(
+			options.ffmpegExecutable ?? null,
+			remotionRoot,
+			'ffmpeg'
+		),
+		finalFfmpegString
+	);
 
 	options.signal(() => {
 		task.kill();

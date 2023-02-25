@@ -1,7 +1,9 @@
 ---
+image: /generated/articles-docs-preload-preload-audio.png
 id: preload-audio
 slug: preload-audio
 title: "preloadAudio()"
+crumb: "@remotion/preload"
 ---
 
 _This function is part of the [`@remotion/preload`](/docs/preload) package._
@@ -9,6 +11,8 @@ _This function is part of the [`@remotion/preload`](/docs/preload) package._
 This function preloads audio in the DOM so that when a audio tag is mounted, it can play immediately.
 
 While preload is not necessary for rendering, it can help with seamless playback in the [`<Player />`](/docs/player) and in the preview.
+
+An alternative to `preloadAudio()` is the [`prefetch()`](/docs/prefetch) API. See [`@remotion/preload` vs `prefetch()`](/docs/player/preloading#remotionpreload-vs-prefetch) to decide which one is better for your usecase.
 
 ## Usage
 
@@ -39,8 +43,8 @@ If the resource does not support CORS, `resolveRedirect()` will fail. If the res
 This snippet tries to preload a audio on a best-effort basis. If the redirect cannot be resolved, it tries to preload the original URL.
 
 ```tsx twoslash
+import { preloadAudio, resolveRedirect } from "@remotion/preload";
 import { Audio } from "remotion";
-import { resolveRedirect, preloadAudio } from "@remotion/preload";
 
 // This code gets executed immediately once the page loads
 let urlToLoad = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";

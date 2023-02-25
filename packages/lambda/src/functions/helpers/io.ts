@@ -1,6 +1,8 @@
 import type {_Object} from '@aws-sdk/client-s3';
 import {
+	DeleteObjectCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 	ListObjectsV2Command,
 	PutObjectCommand,
 } from '@aws-sdk/client-s3';
@@ -8,6 +10,7 @@ import type {ReadStream} from 'fs';
 import mimeTypes from 'mime-types';
 import type {Readable} from 'stream';
 import type {AwsRegion} from '../../pricing/aws-regions';
+import type {CustomCredentials} from '../../shared/aws-clients';
 import {getS3Client} from '../../shared/aws-clients';
 import type {Privacy} from '../../shared/constants';
 import type {DownloadBehavior} from '../../shared/content-disposition-header';
@@ -30,7 +33,7 @@ export const lambdaLs = async ({
 	continuationToken,
 }: LambdaLSInput): LambdaLsReturnType => {
 	try {
-		const list = await getS3Client(region).send(
+		const list = await getS3Client(region, null).send(
 			new ListObjectsV2Command({
 				Bucket: bucketName,
 				Prefix: prefix,
@@ -59,7 +62,7 @@ export const lambdaLs = async ({
 
 		// Prevent from accessing a foreign bucket, retry without ExpectedBucketOwner and see if it works. If it works then it's an owner mismatch.
 		if ((err as Error).stack?.includes('AccessDenied')) {
-			await getS3Client(region).send(
+			await getS3Client(region, null).send(
 				new ListObjectsV2Command({
 					Bucket: bucketName,
 					Prefix: prefix,
@@ -74,6 +77,25 @@ export const lambdaLs = async ({
 	}
 };
 
+export const lambdaDeleteFile = async ({
+	bucketName,
+	key,
+	region,
+	customCredentials,
+}: {
+	region: AwsRegion;
+	bucketName: string;
+	key: string;
+	customCredentials: CustomCredentials | null;
+}) => {
+	await getS3Client(region, customCredentials).send(
+		new DeleteObjectCommand({
+			Bucket: bucketName,
+			Key: key,
+		})
+	);
+};
+
 export const lambdaWriteFile = async ({
 	bucketName,
 	key,
@@ -82,6 +104,7 @@ export const lambdaWriteFile = async ({
 	privacy,
 	expectedBucketOwner,
 	downloadBehavior,
+	customCredentials,
 }: {
 	bucketName: string;
 	key: string;
@@ -90,8 +113,9 @@ export const lambdaWriteFile = async ({
 	privacy: Privacy;
 	expectedBucketOwner: string | null;
 	downloadBehavior: DownloadBehavior | null;
+	customCredentials: CustomCredentials | null;
 }): Promise<void> => {
-	await getS3Client(region).send(
+	await getS3Client(region, customCredentials).send(
 		new PutObjectCommand({
 			Bucket: bucketName,
 			Key: key,
@@ -102,7 +126,9 @@ export const lambdaWriteFile = async ({
 					: privacy === 'private'
 					? 'private'
 					: 'public-read',
-			ExpectedBucketOwner: expectedBucketOwner ?? undefined,
+			ExpectedBucketOwner: customCredentials
+				? undefined
+				: expectedBucketOwner ?? undefined,
 			ContentType: mimeTypes.lookup(key) || 'application/octet-stream',
 			ContentDisposition: getContentDispositionHeader(downloadBehavior),
 		})
@@ -120,7 +146,7 @@ export const lambdaReadFile = async ({
 	region: AwsRegion;
 	expectedBucketOwner: string;
 }): Promise<Readable> => {
-	const {Body} = await getS3Client(region).send(
+	const {Body} = await getS3Client(region, null).send(
 		new GetObjectCommand({
 			Bucket: bucketName,
 			Key: key,
@@ -128,4 +154,25 @@ export const lambdaReadFile = async ({
 		})
 	);
 	return Body as Readable;
+};
+
+export const lambdaHeadCommand = async ({
+	bucketName,
+	key,
+	region,
+}: {
+	bucketName: string;
+	key: string;
+	region: AwsRegion;
+}): Promise<{
+	LastModified?: Date | undefined;
+	ContentLength?: number | undefined;
+}> => {
+	const head = await getS3Client(region, null).send(
+		new HeadObjectCommand({
+			Bucket: bucketName,
+			Key: key,
+		})
+	);
+	return head;
 };

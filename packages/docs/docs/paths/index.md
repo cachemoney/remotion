@@ -1,8 +1,12 @@
 ---
+image: /generated/articles-docs-paths-index.png
 title: "@remotion/paths"
+crumb: "SVG"
 ---
 
-A package providing utility functions for dealing with SVG paths. This package includes code from [`svg-path-properties`](https://www.npmjs.com/package/svg-path-properties), [`svg-path-reverse`](https://github.com/Pomax/svg-path-reverse#readme) and [`d3-interpolate-path`](https://github.com/pbeshai/d3-interpolate-path) with the following improvements:
+import {TableOfContents} from '../../components/TableOfContents/paths';
+
+A package providing utility functions for dealing with SVG paths. This package includes code from [`svg-path-properties`](https://www.npmjs.com/package/svg-path-properties), [`svg-path-reverse`](https://github.com/Pomax/svg-path-reverse#readme), [`svgpath`](https://github.com/fontello/svgpath), [`svg-path-bbox`](https://github.com/mondeja/svg-path-bbox), [`translate-svg-path`](https://github.com/michaelrhodes/translate-svg-path) and [`d3-interpolate-path`](https://github.com/pbeshai/d3-interpolate-path) with the following improvements:
 
 - Functional style APIs
 - First class Typescript types
@@ -49,14 +53,7 @@ yarn add @remotion/paths
 
 ## Functions
 
-- [`getLength()`](/docs/paths/get-length)
-- [`getParts()`](/docs/paths/get-parts)
-- [`getPointAtLength()`](/docs/paths/get-point-at-length)
-- [`getTangentAtLength()`](/docs/paths/get-tangent-at-length)
-- [`reversePath()`](/docs/paths/reverse-path)
-- [`normalizePath()`](/docs/paths/normalize-path)
-- [`interpolatePath()`](/docs/paths/interpolate-path)
-- [`evolvePath()`](/docs/paths/evolve-path)
+<TableOfContents />
 
 ## License
 

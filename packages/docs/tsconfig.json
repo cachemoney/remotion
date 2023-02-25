@@ -5,6 +5,9 @@
     "types": ["node"],
     "skipLibCheck": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "jsx": "react",
+    "target": "ES2019",
+    "moduleResolution": "node"
   }
 }

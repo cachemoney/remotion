@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import {Internals} from 'remotion';
 import '../styles/styles.css';
 import {Editor} from './editor/components/Editor';
+import {EditorContexts} from './editor/components/EditorContexts';
 import {ServerDisconnected} from './editor/components/Notifications/ServerDisconnected';
 import {openEventSource} from './event-source';
 
@@ -16,8 +17,10 @@ const getServerDisconnectedDomElement = () => {
 };
 
 const content = (
-	<Internals.RemotionRoot>
-		<Editor />
+	<Internals.RemotionRoot numberOfAudioTags={window.remotion_numberOfAudioTags}>
+		<EditorContexts>
+			<Editor />
+		</EditorContexts>
 	</Internals.RemotionRoot>
 );
 
@@ -30,9 +33,7 @@ if (ReactDOM.createRoot) {
 	);
 } else {
 	(ReactDOM as unknown as {render: typeof render}).render(
-		<Internals.RemotionRoot>
-			<Editor />
-		</Internals.RemotionRoot>,
+		content,
 		Internals.getPreviewDomElement()
 	);
 	(ReactDOM as unknown as {render: typeof render}).render(

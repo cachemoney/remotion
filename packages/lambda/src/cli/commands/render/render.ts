@@ -1,8 +1,10 @@
-import {CliInternals} from '@remotion/cli';
-import {RenderInternals} from '@remotion/renderer';
+import {CliInternals, ConfigInternals} from '@remotion/cli';
+import {getCompositions, RenderInternals} from '@remotion/renderer';
 import {downloadMedia} from '../../../api/download-media';
 import {getRenderProgress} from '../../../api/get-render-progress';
 import {renderMediaOnLambda} from '../../../api/render-media-on-lambda';
+import type {EnhancedErrorInfo} from '../../../functions/helpers/write-lambda-error';
+import type {RenderProgress} from '../../../shared/constants';
 import {
 	BINARY_NAME,
 	DEFAULT_MAX_RETRIES,
@@ -13,6 +15,7 @@ import {validateFramesPerLambda} from '../../../shared/validate-frames-per-lambd
 import type {LambdaCodec} from '../../../shared/validate-lambda-codec';
 import {validatePrivacy} from '../../../shared/validate-privacy';
 import {validateMaxRetries} from '../../../shared/validate-retries';
+import {validateServeUrl} from '../../../shared/validate-serveurl';
 import {parsedLambdaCli} from '../../args';
 import {getAwsRegion} from '../../get-aws-region';
 import {findFunctionName} from '../../helpers/find-function-name';
@@ -22,7 +25,7 @@ import {makeMultiProgressFromStatus, makeProgressString} from './progress';
 
 export const RENDER_COMMAND = 'render';
 
-export const renderCommand = async (args: string[]) => {
+export const renderCommand = async (args: string[], remotionRoot: string) => {
 	const serveUrl = args[0];
 	if (!serveUrl) {
 		Log.error('No serve URL passed.');
@@ -36,26 +39,31 @@ export const renderCommand = async (args: string[]) => {
 		quit(1);
 	}
 
-	const composition = args[1];
+	const region = getAwsRegion();
+
+	let composition: string = args[1];
 	if (!composition) {
-		Log.error('No composition ID passed.');
-		Log.info('Pass an additional argument specifying the composition ID.');
-		Log.info();
-		Log.info(
-			`${BINARY_NAME} ${RENDER_COMMAND} <serve-url> <composition-id> [output-location]`
-		);
-		quit(1);
+		Log.info('No compositions passed. Fetching compositions...');
+
+		validateServeUrl(serveUrl);
+		const comps = await getCompositions(serveUrl);
+		const {compositionId} = await CliInternals.selectComposition(comps);
+		composition = compositionId;
 	}
 
-	const outName = args[2] ?? null;
+	const outName = parsedLambdaCli['out-name'];
+	const downloadName = args[2] ?? null;
+
+	const {codec, reason} = CliInternals.getFinalCodec({
+		downloadName,
+		outName: outName ?? null,
+	});
 
 	const {
 		chromiumOptions,
-		codec,
 		crf,
 		envVariables,
 		frameRange,
-		imageFormat,
 		inputProps,
 		logLevel,
 		pixelFormat,
@@ -66,14 +74,20 @@ export const renderCommand = async (args: string[]) => {
 		everyNthFrame,
 		numberOfGifLoops,
 		muted,
+		overwrite,
+		audioBitrate,
+		videoBitrate,
+		height,
+		width,
 	} = await CliInternals.getCliOptions({
 		type: 'series',
 		isLambda: true,
+		remotionRoot,
 	});
 
-	const functionName = await findFunctionName();
+	const imageFormat = CliInternals.getImageFormat(codec);
 
-	const region = getAwsRegion();
+	const functionName = await findFunctionName();
 
 	const maxRetries = parsedLambdaCli['max-retries'] ?? DEFAULT_MAX_RETRIES;
 	validateMaxRetries(maxRetries);
@@ -81,7 +95,7 @@ export const renderCommand = async (args: string[]) => {
 	const privacy = parsedLambdaCli.privacy ?? DEFAULT_OUTPUT_PRIVACY;
 	validatePrivacy(privacy);
 	const framesPerLambda = parsedLambdaCli['frames-per-lambda'] ?? undefined;
-	validateFramesPerLambda(framesPerLambda);
+	validateFramesPerLambda({framesPerLambda, durationInFrames: 1});
 
 	const res = await renderMediaOnLambda({
 		functionName,
@@ -109,9 +123,23 @@ export const renderCommand = async (args: string[]) => {
 		everyNthFrame,
 		concurrencyPerLambda: parsedLambdaCli['concurrency-per-lambda'],
 		muted,
+		overwrite,
+		audioBitrate,
+		videoBitrate,
+		forceHeight: height,
+		forceWidth: width,
+		webhook: parsedLambdaCli.webhook
+			? {
+					url: parsedLambdaCli.webhook,
+					secret: parsedLambdaCli['webhook-secret'] ?? null,
+			  }
+			: undefined,
+		rendererFunctionName: parsedLambdaCli['renderer-function-name'] ?? null,
+		forceBucketName: parsedLambdaCli['force-bucket-name'],
+		audioCodec: CliInternals.parsedCli['audio-codec'],
 	});
 
-	const totalSteps = outName ? 5 : 4;
+	const totalSteps = downloadName ? 6 : 5;
 
 	const progressBar = CliInternals.createOverwriteableCliOutput(
 		CliInternals.quietFlagProvided()
@@ -119,10 +147,21 @@ export const renderCommand = async (args: string[]) => {
 
 	Log.info(
 		CliInternals.chalk.gray(
-			`Bucket = ${res.bucketName}, renderId = ${res.renderId}, functionName = ${functionName}`
+			`bucket = ${res.bucketName}, function = ${functionName}`
 		)
 	);
+	Log.info(
+		CliInternals.chalk.gray(
+			`renderId = ${res.renderId}, codec = ${codec} (${reason})`
+		)
+	);
+	const verbose = RenderInternals.isEqualOrBelowLogLevel(
+		ConfigInternals.Logging.getLogLevel(),
+		'verbose'
+	);
+
 	Log.verbose(`CloudWatch logs (if enabled): ${res.cloudWatchLogs}`);
+	Log.verbose(`Render folder: ${res.folderInS3Console}`);
 	const status = await getRenderProgress({
 		functionName,
 		bucketName: res.bucketName,
@@ -136,6 +175,9 @@ export const renderCommand = async (args: string[]) => {
 			steps: totalSteps,
 			downloadInfo: null,
 			retriesInfo: status.retriesInfo,
+			verbose,
+			totalFrames: getTotalFrames(status),
+			timeToEncode: status.timeToEncode,
 		})
 	);
 
@@ -155,6 +197,9 @@ export const renderCommand = async (args: string[]) => {
 				steps: totalSteps,
 				retriesInfo: newStatus.retriesInfo,
 				downloadInfo: null,
+				verbose,
+				timeToEncode: newStatus.timeToEncode,
+				totalFrames: getTotalFrames(newStatus),
 			})
 		);
 
@@ -165,13 +210,16 @@ export const renderCommand = async (args: string[]) => {
 					steps: totalSteps,
 					downloadInfo: null,
 					retriesInfo: newStatus.retriesInfo,
+					verbose,
+					timeToEncode: newStatus.timeToEncode,
+					totalFrames: getTotalFrames(newStatus),
 				})
 			);
-			if (outName) {
+			if (downloadName) {
 				const downloadStart = Date.now();
 				const {outputPath, sizeInBytes} = await downloadMedia({
 					bucketName: res.bucketName,
-					outPath: outName,
+					outPath: downloadName,
 					region: getAwsRegion(),
 					renderId: res.renderId,
 					onProgress: ({downloaded, totalSize}) => {
@@ -185,6 +233,9 @@ export const renderCommand = async (args: string[]) => {
 									downloaded,
 									totalSize,
 								},
+								verbose,
+								timeToEncode: newStatus.timeToEncode,
+								totalFrames: getTotalFrames(newStatus),
 							})
 						);
 					},
@@ -199,6 +250,9 @@ export const renderCommand = async (args: string[]) => {
 							downloaded: sizeInBytes,
 							totalSize: sizeInBytes,
 						},
+						verbose,
+						timeToEncode: newStatus.timeToEncode,
+						totalFrames: getTotalFrames(newStatus),
 					})
 				);
 				Log.info();
@@ -239,7 +293,13 @@ export const renderCommand = async (args: string[]) => {
 
 		if (newStatus.fatalErrorEncountered) {
 			Log.error('\n');
+			const uniqueErrors: EnhancedErrorInfo[] = [];
 			for (const err of newStatus.errors) {
+				if (uniqueErrors.find((e) => e.stack === err.stack)) {
+					continue;
+				}
+
+				uniqueErrors.push(err);
 				if (err.explanation) {
 					Log.error(err.explanation);
 				}
@@ -260,3 +320,12 @@ export const renderCommand = async (args: string[]) => {
 		}
 	}
 };
+
+function getTotalFrames(status: RenderProgress): number | null {
+	return status.renderMetadata
+		? RenderInternals.getFramesToRender(
+				status.renderMetadata.frameRange,
+				status.renderMetadata.everyNthFrame
+		  ).length
+		: null;
+}

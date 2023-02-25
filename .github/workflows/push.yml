@@ -15,16 +15,20 @@ jobs:
       - uses: actions/checkout@main
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: 16
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
       - run: |
           corepack enable
-      - uses: Iamshankhadeep/setup-ffmpeg@v1.1
+      - uses: Iamshankhadeep/setup-ffmpeg@v1.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ matrix.versionffmpeg_version }}
 
       - name: Cache .pnpm-store
-        uses: actions/cache@v1
+        uses: actions/cache@v3.0.11
         with:
           path: ~/.pnpm-store
           key: v2-${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -48,16 +52,20 @@ jobs:
       - uses: actions/checkout@main
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: 16
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
       - run: |
           corepack enable
-      - uses: Iamshankhadeep/setup-ffmpeg@v1.1
+      - uses: Iamshankhadeep/setup-ffmpeg@v1.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ matrix.versionffmpeg_version }}
 
       - name: Cache .pnpm-store
-        uses: actions/cache@v1
+        uses: actions/cache@v3.0.11
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}-bust
@@ -88,7 +96,7 @@ jobs:
             node_version: 14
             ffmpeg_version: 4.4
           - os: ubuntu-latest
-            node_version: 18
+            node_version: 19
             ffmpeg_version: 4.4
           - os: ubuntu-latest
             node_version: 14
@@ -101,28 +109,33 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
       - run: |
           corepack enable
-      - uses: Iamshankhadeep/setup-ffmpeg@v1.1
+      - uses: Iamshankhadeep/setup-ffmpeg@v1.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: ${{ matrix.ffmpeg_version }}
 
       - name: Cache .pnpm-store
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: ~/.pnpm-store
           key: v2-deps-${{ runner.os }}-node${{ matrix.node_version }}
 
       - name: Cache node_modules/.cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: node_modules/.cache
           key: v2-deps-${{ runner.os }}-${{ matrix.ffmpeg_version }}-node${{ matrix.node_version }}-v2
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Cache dist/ folders
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         if: runner.os != 'windows'
         with:
           path: packages/**/dist

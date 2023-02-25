@@ -60,29 +60,43 @@ export const Timeline: React.FC = () => {
 		});
 	}, [sequences, videoConfig]);
 
-	useImperativeHandle(timelineRef, () => {
-		return {
-			expandAll: () => {
-				dispatch({
-					type: 'expand-all',
-					allHashes: timeline.map((t) => t.hash),
-				});
-			},
-			collapseAll: () => {
-				dispatch({
-					type: 'collapse-all',
-					allHashes: timeline.map((t) => t.hash),
-				});
-			},
-		};
-	});
+	useImperativeHandle(
+		timelineRef,
+		() => {
+			return {
+				expandAll: () => {
+					dispatch({
+						type: 'expand-all',
+						allHashes: timeline.map((t) => t.hash),
+					});
+				},
+				collapseAll: () => {
+					dispatch({
+						type: 'collapse-all',
+						allHashes: timeline.map((t) => t.hash),
+					});
+				},
+			};
+		},
+		[timeline]
+	);
 
-	const withoutHidden = useMemo(() => {
-		return timeline.filter((t) => !isTrackHidden(t, timeline, state));
-	}, [state, timeline]);
+	const durationInFrames = videoConfig?.durationInFrames ?? 0;
 
-	const shown = withoutHidden.slice(0, MAX_TIMELINE_TRACKS);
-	const hasBeenCut = withoutHidden.length > shown.length;
+	const filtered = useMemo(() => {
+		const withoutHidden = timeline.filter(
+			(t) => !isTrackHidden(t, timeline, state)
+		);
+
+		const withoutAfter = withoutHidden.filter((t) => {
+			return t.sequence.from <= durationInFrames && t.sequence.duration > 0;
+		});
+
+		return withoutAfter;
+	}, [durationInFrames, state, timeline]);
+
+	const shown = filtered.slice(0, MAX_TIMELINE_TRACKS);
+	const hasBeenCut = filtered.length > shown.length;
 
 	const inner: React.CSSProperties = useMemo(() => {
 		return {

@@ -1,13 +1,21 @@
 ---
+image: /generated/articles-docs-cli-preview.png
 title: npx remotion preview
 sidebar_label: preview
+crumb: CLI Reference
 ---
 
 Start the server which allows you to preview the Remotion video. The only argument to pass is the entry file:
 
 ```bash
-npx remotion preview src/index.tsx
+npx remotion preview <entry-file>
 ```
+
+If `entry-file` is not passed, Remotion will try to detect the entry file with the following priority order:
+
+1. Get the path from the Config (Can be set using `Config.setEntryPoint("<entry-point>")`).
+2. Look for some common paths i.e. `src/index.ts`, `src/index.tsx`, `src/index.js`, `remotion/index.js`.
+3. Fail as entry point could not be determined.
 
 ## Flags
 
@@ -19,13 +27,13 @@ npx remotion preview src/index.tsx
 Inline JSON string isn't supported on Windows because it removes the `"` character, use a temporary file instead.
 :::
 
-### `--config`
+### `--config` <AvailableFrom v="1.2.0" />
 
-Specify a location for the Remotion config file. Available in v1.2 and later.
+Specify a location for the Remotion config file.
 
-### `--env-file`
+### `--env-file` <AvailableFrom v="2.2.0" />
 
-Specify a location for a dotenv file. Default `.env`. Available in v2.2 and later.
+Specify a location for a dotenv file. Default `.env`.
 
 ### `--log`
 
@@ -35,8 +43,19 @@ Specify a location for a dotenv file. Default `.env`. Available in v2.2 and late
 
 [Set a custom HTTP server port](/docs/config#setPort). If not defined, Remotion will try to find a free port.
 
-### `--disable-keyboard-shortcuts`
+### `--public-dir` <AvailableFrom v="3.2.13" />
 
-_Available from v3.2.11_
+[Define the location of the `public/` directory.](/docs/config#setpublicdir). If not defined, Remotion will assume the location is the `public` folder in your Remotion root.
 
-Disables all keyboard shortcuts in the Preview.
+### `--disable-keyboard-shortcuts` <AvailableFrom v="3.2.11" />
+
+[Disables all keyboard shortcuts in the Preview](/docs/config#setkeyboardshortcutsenabled).
+
+### `--webpack-poll` <AvailableFrom v="3.3.11" />
+
+[Enables Webpack polling](/docs/config#setwebpackpollinginmilliseconds) instead of the file system event listeners for hot reloading. This is useful if you are inside a virtual machine or have a remote file system.
+Pass a value in milliseconds, for example `--webpack-poll=1000`.
+
+### `--no-open` <AvailableFrom v="3.3.19" />
+
+[Prevents Remotion from trying to open a browser](/docs/config#setshouldopenbrowser). This is useful if you use a different browser for Remotion than the operating system default.

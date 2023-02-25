@@ -8,21 +8,23 @@ import React, {
 import {SharedAudioContextProvider} from './audio/shared-audio-tags';
 import {CompositionManagerProvider} from './CompositionManager';
 import {continueRender, delayRender} from './delay-render';
-import type { TNonceContext} from './nonce';
+import {NativeLayersProvider} from './NativeLayers';
+import type {TNonceContext} from './nonce';
 import {NonceContext} from './nonce';
+import {PrefetchProvider} from './prefetch-state';
 import {random} from './random';
 import type {
 	PlayableMediaTag,
 	SetTimelineContextValue,
-	TimelineContextValue} from './timeline-position-state';
-import {
-	SetTimelineContext,
-	TimelineContext
+	TimelineContextValue,
 } from './timeline-position-state';
+import {SetTimelineContext, TimelineContext} from './timeline-position-state';
+import {DurationsContextProvider} from './video/duration-state';
 
 export const RemotionRoot: React.FC<{
 	children: React.ReactNode;
-}> = ({children}) => {
+	numberOfAudioTags: number;
+}> = ({children, numberOfAudioTags}) => {
 	const [remotionRootId] = useState(() => String(random(null)));
 	const [frame, setFrame] = useState<number>(window.remotion_initialFrame ?? 0);
 	const [playing, setPlaying] = useState<boolean>(false);
@@ -84,14 +86,20 @@ export const RemotionRoot: React.FC<{
 		<NonceContext.Provider value={nonceContext}>
 			<TimelineContext.Provider value={timelineContextValue}>
 				<SetTimelineContext.Provider value={setTimelineContextValue}>
-					<CompositionManagerProvider>
-						<SharedAudioContextProvider
-							// In the preview, which is mostly played on Desktop, we opt out of the autoplay policy fix as described in https://github.com/remotion-dev/remotion/pull/554, as it mostly applies to mobile.
-							numberOfAudioTags={0}
-						>
-							{children}
-						</SharedAudioContextProvider>
-					</CompositionManagerProvider>
+					<PrefetchProvider>
+						<NativeLayersProvider>
+							<CompositionManagerProvider>
+								<DurationsContextProvider>
+									<SharedAudioContextProvider
+										// In the preview, which is mostly played on Desktop, we opt out of the autoplay policy fix as described in https://github.com/remotion-dev/remotion/pull/554, as it mostly applies to mobile.
+										numberOfAudioTags={numberOfAudioTags}
+									>
+										{children}
+									</SharedAudioContextProvider>
+								</DurationsContextProvider>
+							</CompositionManagerProvider>
+						</NativeLayersProvider>
+					</PrefetchProvider>
 				</SetTimelineContext.Provider>
 			</TimelineContext.Provider>
 		</NonceContext.Provider>

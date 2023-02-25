@@ -1,5 +1,5 @@
 import type {ChromiumOptions} from '@remotion/renderer';
-import { openBrowser} from '@remotion/renderer';
+import {openBrowser} from '@remotion/renderer';
 import type {Await} from '../../shared/await';
 import {executablePath} from './get-chromium-executable-path';
 
@@ -42,7 +42,7 @@ export const getBrowserInstance = async (
 
 	launching = true;
 
-	const execPath = await executablePath();
+	const execPath = executablePath();
 
 	const actualChromiumOptions: ChromiumOptions = {
 		...chromiumOptions,
@@ -57,7 +57,7 @@ export const getBrowserInstance = async (
 	});
 	_browserInstance.on('disconnected', () => {
 		console.log('Browser disconnected / crashed');
-		_browserInstance?.close().catch(() => undefined);
+		_browserInstance?.close(true).catch(() => undefined);
 		_browserInstance = null;
 	});
 	launching = false;

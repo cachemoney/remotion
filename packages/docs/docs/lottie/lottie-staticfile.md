@@ -1,8 +1,10 @@
 ---
+image: /generated/articles-docs-lottie-lottie-staticfile.png
 id: lottie-staticfile
 sidebar_label: "Loading from staticFile()"
 title: "Loading Lottie animations from staticFile()"
 slug: staticfile
+crumb: "@remotion/lottie"
 ---
 
 In order to load a Lottie animation from a file that has been put into the `public/` folder, use [`staticFile()`](/docs/staticfile) in combination with [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and Remotion's [`delayRender()`](/docs/delay-render) function.
@@ -10,9 +12,14 @@ In order to load a Lottie animation from a file that has been put into the `publ
 Use the `LottieAnimationData` type to keep a state using React's `useState()` and only render the [`<Lottie>`](/docs/lottie/lottie) component once the data has been fetched.
 
 ```tsx twoslash title="Animation.tsx"
-import { continueRender, delayRender, staticFile } from "remotion";
-import { useEffect, useState } from "react";
 import { Lottie, LottieAnimationData } from "@remotion/lottie";
+import { useEffect, useState } from "react";
+import {
+  cancelRender,
+  continueRender,
+  delayRender,
+  staticFile,
+} from "remotion";
 
 const Square = () => {
   const [handle] = useState(() => delayRender("Loading Lottie animation"));
@@ -28,7 +35,7 @@ const Square = () => {
         continueRender(handle);
       })
       .catch((err) => {
-        console.log("Animation failed to load", err);
+        cancelRender(err);
       });
   }, [handle]);
 

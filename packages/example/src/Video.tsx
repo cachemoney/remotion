@@ -3,10 +3,12 @@ import React from 'react';
 import {Composition, Folder, getInputProps, Still} from 'remotion';
 import {TwentyTwoKHzAudio} from './22KhzAudio';
 import BetaText from './BetaText';
+import {CancelRender} from './CancelRender';
 import {ColorInterpolation} from './ColorInterpolation';
 import {MyCtx, WrappedInContext} from './Context';
 import CorruptVideo from './CorruptVideo';
 import {ErrorOnFrame10} from './ErrorOnFrame10';
+import {Expert} from './Expert';
 import {FontDemo} from './Fonts';
 import {Framer} from './Framer';
 import {FreezeExample} from './Freeze/FreezeExample';
@@ -16,17 +18,26 @@ import {OffthreadRemoteVideo} from './OffthreadRemoteVideo/OffthreadRemoteVideo'
 import {OrbScene} from './Orb';
 import InfinityVideo from './ReallyLongVideo';
 import RemoteVideo from './RemoteVideo';
+import {ScalePath} from './ScalePath';
 import {Scripts} from './Scripts';
+import CircleTest from './Shapes/CircleTest';
+import EllipseTest from './Shapes/EllipseTest';
+import RectTest from './Shapes/RectTest';
+import StarTest from './Shapes/StarTest';
+import TriangleTest from './Shapes/TriangleTest';
 import {SkipZeroFrame} from './SkipZeroFrame';
 import {BaseSpring, SpringWithDuration} from './Spring/base-spring';
 import {SeriesTesting} from './StaggerTesting';
 import {StaticDemo} from './StaticServer';
+import {StillZoom} from './StillZoom';
 import {TenFrameTester} from './TenFrameTester';
 import ThreeBasic from './ThreeBasic';
 import {VideoOnCanvas} from './VideoOnCanvas';
 import {Greenscreen} from './VideoOnCanvas/greenscreen';
 import {VideoSpeed} from './VideoSpeed';
 import {VideoTesting} from './VideoTesting';
+import {WarpDemo} from './WarpText';
+import {WarpDemo2} from './WarpText/demo2';
 
 if (alias !== 'alias') {
 	throw new Error('should support TS aliases');
@@ -41,14 +52,6 @@ export const Index: React.FC = () => {
 		<>
 			<Folder name="components">
 				<Composition
-					id="iframe"
-					lazyComponent={() => import('./IframeTest')}
-					width={1080}
-					height={1080}
-					fps={30}
-					durationInFrames={10}
-				/>
-				<Composition
 					id="looped"
 					lazyComponent={() => import('./LoopedVideo')}
 					durationInFrames={200}
@@ -57,12 +60,20 @@ export const Index: React.FC = () => {
 					width={1080}
 				/>
 				<Composition
-					id="gif"
-					lazyComponent={() => import('./GifTest')}
+					fps={30}
+					id="cancel-render"
+					width={920}
+					height={720}
+					component={CancelRender}
+					durationInFrames={100}
+				/>
+				<Composition
+					id="iframe"
+					lazyComponent={() => import('./IframeTest')}
 					width={1080}
 					height={1080}
 					fps={30}
-					durationInFrames={150}
+					durationInFrames={10}
 				/>
 				<Composition
 					id="stagger-test"
@@ -329,6 +340,14 @@ export const Index: React.FC = () => {
 					durationInFrames={100}
 				/>
 			</Folder>
+			<Folder name="still-tests">
+				<Still
+					id="still-zoom"
+					component={StillZoom}
+					width={1800}
+					height={2200}
+				/>
+			</Folder>
 			<Folder name="features">
 				<Composition
 					id="mdx-test"
@@ -406,6 +425,14 @@ export const Index: React.FC = () => {
 					durationInFrames={300}
 				/>
 				<Composition
+					id="audio-testing-amplify"
+					lazyComponent={() => import('./AudioTesting/Amplify')}
+					width={1080}
+					height={1080}
+					fps={30}
+					durationInFrames={120}
+				/>
+				<Composition
 					id="audio-testing-base64"
 					lazyComponent={() => import('./AudioTesting/Base64')}
 					width={1080}
@@ -416,6 +443,14 @@ export const Index: React.FC = () => {
 				<Composition
 					id="audio-visualization"
 					lazyComponent={() => import('./AudioVisualization')}
+					width={1080}
+					height={1080}
+					fps={30}
+					durationInFrames={180 * 30}
+				/>
+				<Composition
+					id="loop-audio"
+					lazyComponent={() => import('./LoopAudio')}
 					width={1080}
 					height={1080}
 					fps={30}
@@ -467,6 +502,14 @@ export const Index: React.FC = () => {
 					width={850}
 				/>
 				<Composition
+					id="image-in-lottie"
+					lazyComponent={() => import('./Lottie/ImageInLottie')}
+					durationInFrames={300}
+					fps={30}
+					height={850}
+					width={850}
+				/>
+				<Composition
 					id="loader"
 					lazyComponent={() => import('./Lottie/Loader')}
 					durationInFrames={240}
@@ -491,6 +534,117 @@ export const Index: React.FC = () => {
 					fps={30}
 					height={1080}
 					width={1080}
+				/>
+				<Composition
+					id="scale-path"
+					component={ScalePath}
+					durationInFrames={500}
+					fps={30}
+					height={1080}
+					width={1080}
+				/>
+				<Composition
+					id="path-warp"
+					component={WarpDemo}
+					durationInFrames={500}
+					fps={30}
+					height={1080}
+					width={1080}
+				/>
+				<Composition
+					id="path-warp-2"
+					component={WarpDemo2}
+					durationInFrames={500}
+					fps={30}
+					height={1080}
+					width={1080}
+				/>
+			</Folder>
+			<Folder name="gif">
+				<Composition
+					id="gif"
+					lazyComponent={() => import('./GifTest')}
+					width={1080}
+					height={1080}
+					fps={30}
+					durationInFrames={200}
+				/>
+				<Composition
+					id="gif-duration"
+					lazyComponent={() => import('./GifTest/gif-duration')}
+					width={1080}
+					height={1080}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="gif-fill-modes"
+					lazyComponent={() => import('./GifTest/fill-modes')}
+					width={1920}
+					height={1080}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="gif-loop-behavior"
+					lazyComponent={() => import('./GifTest/loop-behavior')}
+					width={1920}
+					height={1080}
+					fps={30}
+					durationInFrames={540}
+				/>
+			</Folder>
+			<Folder name="og-images">
+				<Composition
+					id="expert"
+					component={Expert}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+			</Folder>
+
+			<Folder name="shapes">
+				<Composition
+					id="circle-test"
+					component={CircleTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="rect-test"
+					component={RectTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="triangle-test"
+					component={TriangleTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="ellipse-test"
+					component={EllipseTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+				<Composition
+					id="star-test"
+					component={StarTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
 				/>
 			</Folder>
 		</>
