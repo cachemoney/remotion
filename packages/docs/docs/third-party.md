@@ -22,9 +22,17 @@ Use the [`@remotion/gif`](/docs/gif) package.
 
 At the moment, we don't have a Framer Motion integration, but are discussing the matter on [GitHub Issues](https://github.com/remotion-dev/remotion/issues/399).
 
+## Anime.JS
+
+See [this repository](https://github.com/remotion-dev/anime-example) for an example.
+
 ## Lottie
 
 Use the [`@remotion/lottie`](/docs/lottie) package.
+
+## Rive
+
+Use the [`@remotion/rive`](/docs/rive) package.
 
 ## After Effects
 

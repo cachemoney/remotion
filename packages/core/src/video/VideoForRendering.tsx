@@ -18,7 +18,7 @@ import {continueRender, delayRender} from '../delay-render.js';
 import {useRemotionEnvironment} from '../get-environment.js';
 import {isApproximatelyTheSame} from '../is-approximately-the-same.js';
 import {random} from '../random.js';
-import {SequenceContext} from '../Sequence.js';
+import {SequenceContext} from '../SequenceContext.js';
 import {useTimelinePosition} from '../timeline-position-state.js';
 import {useCurrentFrame} from '../use-current-frame.js';
 import {useUnsafeVideoConfig} from '../use-unsafe-video-config.js';
@@ -26,10 +26,6 @@ import {evaluateVolume} from '../volume-prop.js';
 import {warnAboutNonSeekableMedia} from '../warn-about-non-seekable-media.js';
 import {getMediaTime} from './get-current-time.js';
 import type {RemotionVideoProps} from './props.js';
-
-type VideoForRenderingProps = RemotionVideoProps & {
-	onDuration: (src: string, durationInSeconds: number) => void;
-};
 
 type VideoForRenderingProps = RemotionVideoProps & {
 	onDuration: (src: string, durationInSeconds: number) => void;

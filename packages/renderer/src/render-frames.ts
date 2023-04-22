@@ -6,7 +6,7 @@ import {Internals} from 'remotion';
 import type {RenderMediaOnDownload} from './assets/download-and-map-assets-to-file';
 import {downloadAndMapAssetsToFileUrl} from './assets/download-and-map-assets-to-file';
 import type {DownloadMap} from './assets/download-map';
-import {makeDownloadMap} from './assets/download-map';
+import {cleanDownloadMap, makeDownloadMap} from './assets/download-map';
 import {DEFAULT_BROWSER} from './browser';
 import type {BrowserExecutable} from './browser-executable';
 import type {BrowserLog} from './browser-log';
@@ -528,10 +528,11 @@ export const renderFrames = (
 		'in the `config` object of `renderFrames()`',
 		false
 	);
-	Internals.validateDurationInFrames(
-		composition.durationInFrames,
-		'in the `config` object passed to `renderFrames()`'
-	);
+	Internals.validateDurationInFrames({
+		durationInFrames: composition.durationInFrames,
+		component: 'in the `config` object passed to `renderFrames()`',
+		allowFloats: false,
+	});
 	if (options.quality !== undefined && options.imageFormat !== 'jpeg') {
 		throw new Error(
 			"You can only pass the `quality` option if `imageFormat` is 'jpeg'."
@@ -563,6 +564,10 @@ export const renderFrames = (
 
 	return new Promise<RenderFramesOutput>((resolve, reject) => {
 		const cleanup: CleanupFn[] = [];
+		if (!options.downloadMap) {
+			cleanup.push(() => cleanDownloadMap(downloadMap));
+		}
+
 		const onError = (err: Error) => {
 			reject(err);
 		};

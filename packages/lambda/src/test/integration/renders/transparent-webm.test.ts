@@ -9,7 +9,6 @@ import {LambdaRoutines, rendersPrefix} from '../../../defaults';
 import {handler} from '../../../functions';
 import {lambdaLs, lambdaReadFile} from '../../../functions/helpers/io';
 import type {LambdaReturnValues} from '../../../shared/return-values';
-import {disableLogs, enableLogs} from '../../disable-logs';
 
 const extraContext = {
 	invokedFunctionArn: 'arn:fake',
@@ -19,11 +18,11 @@ const extraContext = {
 type Await<T> = T extends PromiseLike<infer U> ? U : T;
 
 beforeAll(() => {
-	disableLogs();
+	// disableLogs();
 });
 
 afterAll(async () => {
-	enableLogs();
+	// enableLogs();
 	await RenderInternals.killAllBrowsers();
 });
 
@@ -72,9 +71,11 @@ test('Should make a transparent video', async () => {
 			rendererFunctionName: null,
 			bucketName: null,
 			audioCodec: null,
+			dumpBrowserLogs: false,
 		},
 		extraContext
 	);
+	console.log('invoked!');
 	const startRes = res as Await<LambdaReturnValues[LambdaRoutines.start]>;
 
 	const progress = (await handler(
@@ -86,6 +87,7 @@ test('Should make a transparent video', async () => {
 		},
 		extraContext
 	)) as Await<LambdaReturnValues[LambdaRoutines.status]>;
+	console.log('got progress', progress);
 
 	const file = await lambdaReadFile({
 		bucketName: startRes.bucketName,
@@ -95,10 +97,8 @@ test('Should make a transparent video', async () => {
 	});
 
 	// We create a temporary directory for storing the frames
-	const out = path.join(
-		await fs.promises.mkdtemp(path.join(os.tmpdir(), 'remotion-')),
-		'hithere.webm'
-	);
+	const tmpdir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'remotion-'));
+	const out = path.join(tmpdir, 'hithere.webm');
 	file.pipe(createWriteStream(out));
 
 	await new Promise<void>((resolve) => {
@@ -135,5 +135,6 @@ test('Should make a transparent video', async () => {
 		prefix: rendersPrefix(startRes.renderId),
 	});
 
+	RenderInternals.deleteDirectory(tmpdir);
 	expect(expectFiles.length).toBe(0);
 });

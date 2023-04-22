@@ -1,10 +1,10 @@
+import type {ComponentType, LazyExoticComponent} from 'react';
 import React, {
 	createContext,
 	createRef,
 	useCallback,
 	useContext,
-	useInsertionEffect,
-	useLayoutEffect,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -95,7 +95,8 @@ export const SharedAudioContext = createContext<SharedContext | null>(null);
 export const SharedAudioContextProvider: React.FC<{
 	numberOfAudioTags: number;
 	children: React.ReactNode;
-}> = ({children, numberOfAudioTags}) => {
+	component: LazyExoticComponent<ComponentType<unknown>> | null;
+}> = ({children, numberOfAudioTags, component}) => {
 	const audios = useRef<AudioElem[]>([]);
 	const [initialNumberOfAudioTags] = useState(numberOfAudioTags);
 
@@ -255,6 +256,26 @@ export const SharedAudioContextProvider: React.FC<{
 		updateAudio,
 	]);
 
+	// Fixing a bug: In React, if a component is unmounted using useInsertionEffect, then
+	// the cleanup function does sometimes not work properly. That is why when we
+	// are changing the composition, we reset the audio state.
+
+	// TODO: Possibly this does not save the problem completely, since the
+	// if an audio tag that is inside a sequence will also not be removed
+	// from the shared audios.
+
+	const resetAudio = useCallback(() => {
+		takenAudios.current = new Array(numberOfAudioTags).fill(false);
+		audios.current = [];
+		rerenderAudios();
+	}, [numberOfAudioTags, rerenderAudios]);
+
+	useEffect(() => {
+		return () => {
+			resetAudio();
+		};
+	}, [component, resetAudio]);
+
 	return (
 		<SharedAudioContext.Provider value={value}>
 			{refs.map(({id, ref}) => {
@@ -288,8 +309,10 @@ export const useSharedAudio = (aud: RemotionAudioProps, audioId: string) => {
 	 * Effects in React 18 fire twice, and we are looking for a way to only fire it once.
 	 * - useInsertionEffect only fires once. If it's available we are in React 18.
 	 * - useLayoutEffect only fires once in React 17.
+	 *
+	 * Need to import it from React to fix React 17 ESM support.
 	 */
-	const effectToUse = useInsertionEffect ?? useLayoutEffect;
+	const effectToUse = React.useInsertionEffect ?? React.useLayoutEffect;
 
 	if (typeof document !== 'undefined') {
 		effectToUse(() => {

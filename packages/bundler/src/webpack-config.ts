@@ -5,7 +5,6 @@ import webpack, {ProgressPlugin} from 'webpack';
 import type {LoaderOptions} from './esbuild-loader/interfaces';
 import {ReactFreshWebpackPlugin} from './fast-refresh';
 import {jsonStringifyWithCircularReferences} from './stringify-with-circular-references';
-import type {WebpackConfiguration, WebpackOverrideFn} from './types';
 import {getWebpackCacheName} from './webpack-cache';
 import esbuild = require('esbuild');
 
@@ -51,7 +50,7 @@ export const webpackConfig = ({
 }: {
 	entry: string;
 	userDefinedComponent: string;
-	outDir: string;
+	outDir: string | null;
 	environment: 'development' | 'production';
 	webpackOverride: WebpackOverrideFn;
 	onProgress?: (f: number) => void;
@@ -63,7 +62,7 @@ export const webpackConfig = ({
 	remotionRoot: string;
 	poll: number | null;
 }): [string, WebpackConfiguration] => {
-	const conf: webpack.Configuration = webpackOverride({
+	const conf: WebpackConfiguration = webpackOverride({
 		optimization: {
 			minimize: false,
 		},
@@ -201,7 +200,7 @@ export const webpackConfig = ({
 				: false,
 			output: {
 				...conf.output,
-				path: outDir,
+				...(outDir ? {path: outDir} : {}),
 			},
 			context: remotionRoot,
 		},

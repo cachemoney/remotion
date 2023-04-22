@@ -89,7 +89,7 @@ The image format that you want - either `"png"` or `"jpeg"`.
 
 _optional_
 
-Sets the quality of the generate JPEG images. Must be an integer between 0 and 100. Default is to leave it up to the browser, [current default is 80](https://github.com/chromium/chromium/blob/99314be8152e688bafbbf9a615536bdbb289ea87/headless/lib/browser/protocol/headless_handler.cc#L32).
+Sets the quality of the generated JPEG images. Must be an integer between 0 and 100. Default is to leave it up to the browser, [current default is 80](https://github.com/chromium/chromium/blob/99314be8152e688bafbbf9a615536bdbb289ea87/headless/lib/browser/protocol/headless_handler.cc#L32).
 
 Only applies if `imageFormat` is `"jpeg"`, otherwise this option is invalid.
 
@@ -180,11 +180,25 @@ Accepted values:
 The default for Lambda is `"swangle"`, but `null` elsewhere.
 :::
 
-### `forceBucketName`
+#### `userAgent` <AvailableFrom v="3.3.83"/>
 
-_optional, available from v3.3.42_
+Lets you set a custom user agent that the headless Chrome browser assumes.
+
+### `forceBucketName?`
+
+_optional_
 
 Specify a specific bucket name to be used. [This is not recommended](/docs/lambda/multiple-buckets), instead let Remotion discover the right bucket automatically.
+
+### `logLevel?`
+
+One of `verbose`, `info`, `warn`, `error`. Determines how much is being logged inside the Lambda function. Logs can be read through the CloudWatch URL that this function returns.
+
+If the `logLevel` is set to `verbose`, the `dumpBrowserLogs` flag will also be enabled.
+
+### `dumpBrowserLogs?` <AvailableFrom v="3.3.83" />
+
+If set to true, all `console` statements from the headless browser will be forwarded to the CloudWatch logs.
 
 ## Return value
 

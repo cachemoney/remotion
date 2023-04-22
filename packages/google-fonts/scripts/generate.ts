@@ -60,7 +60,7 @@ const generate = async (font: Font) => {
   let fonts: Record<string, Record<string, Record<string, string>>> = {};
   for (const node of ast.nodes) {
     //  Only process @font-face
-    if (node.type !== "atrule" || node.name != "font-face") continue;
+    if (node.type !== "atrule" || node.name !== "font-face") continue;
 
     //  Check subset info before @font-face block
     let prev = node.prev();
@@ -180,4 +180,7 @@ const run = async () => {
   console.log("- Generated fonts in " + (Date.now() - date) + "ms");
 };
 
-run();
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

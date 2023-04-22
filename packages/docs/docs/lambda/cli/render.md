@@ -130,7 +130,7 @@ FFMPEG may encode the video in a way that will not result in the exact audio bit
 Example values: `128K` for 128 kbps, `1M` for 1 Mbps.  
 Default: `320k`
 
-### `--video-bitrate`
+### `--video-bitrate` <AvailableFrom v="3.2.32" />
 
 Specify the target bitrate for the generated video.  
 The syntax for FFMPEGs `-b:v` parameter should be used.  
@@ -215,3 +215,15 @@ If you want to use this option, the function must be in the same region, the sam
 ### `--force-bucket-name` <AvailableFrom v="3.3.42" />
 
 Specify a specific bucket name to be used. [This is not recommended](/docs/lambda/multiple-buckets), instead let Remotion discover the right bucket automatically.
+
+### `--ignore-certificate-errors`
+
+Results in invalid SSL certificates in Chrome, such as self-signed ones, being ignored.
+
+### `--disable-web-security`
+
+This will most notably disable CORS in Chrome among other security features.
+
+### `--user-agent` <AvailableFrom v="3.3.83"/>
+
+Lets you set a custom user agent that the headless Chrome browser assumes.

@@ -2,19 +2,20 @@ import execa from 'execa';
 import path from 'path';
 import type {DownloadMap} from './assets/download-map';
 import {chunk} from './chunk';
-import {convertToPcm} from './convert-to-pcm';
 import {createFfmpegComplexFilter} from './create-ffmpeg-complex-filter';
+import {OUTPUT_FILTER_NAME} from './create-ffmpeg-merge-filter';
 import {createSilentAudio} from './create-silent-audio';
 import {deleteDirectory} from './delete-directory';
 import type {FfmpegExecutable} from './ffmpeg-executable';
 import {getExecutableBinary} from './ffmpeg-flags';
 import {pLimit} from './p-limit';
+import type {PreprocessedAudioTrack} from './preprocess-audio-track';
 import {tmpDir} from './tmp-dir';
 import {truthy} from './truthy';
 
 type Options = {
 	ffmpegExecutable: FfmpegExecutable;
-	files: string[];
+	files: PreprocessedAudioTrack[];
 	outName: string;
 	numberOfSeconds: number;
 	downloadMap: DownloadMap;
@@ -39,56 +40,62 @@ const mergeAudioTrackUnlimited = async ({
 		return;
 	}
 
-	if (files.length === 1) {
-		await convertToPcm({
-			outName,
-			ffmpegExecutable,
-			input: files[0],
-			remotionRoot,
-		});
-		return;
-	}
+	// Previously a bug: We cannot optimize for files.length === 1 because we need to pad the audio
 
 	// In FFMPEG, the total number of left and right tracks that can be merged at one time is limited to 64
 	if (files.length >= 32) {
 		const chunked = chunk(files, 10);
 		const tempPath = tmpDir('remotion-large-audio-mixing');
 
-		const chunkNames = await Promise.all(
-			chunked.map(async (chunkFiles, i) => {
-				const chunkOutname = path.join(tempPath, `chunk-${i}.wav`);
-				await mergeAudioTrack({
-					ffmpegExecutable,
-					files: chunkFiles,
-					numberOfSeconds,
-					outName: chunkOutname,
-					downloadMap,
-					remotionRoot,
-				});
-				return chunkOutname;
-			})
-		);
+		try {
+			const chunkNames = await Promise.all(
+				chunked.map(async (chunkFiles, i) => {
+					const chunkOutname = path.join(tempPath, `chunk-${i}.wav`);
+					await mergeAudioTrack({
+						ffmpegExecutable,
+						files: chunkFiles,
+						numberOfSeconds,
+						outName: chunkOutname,
+						downloadMap,
+						remotionRoot,
+					});
+					return chunkOutname;
+				})
+			);
 
-		await mergeAudioTrack({
-			ffmpegExecutable,
-			files: chunkNames,
-			numberOfSeconds,
-			outName,
-			downloadMap,
-			remotionRoot,
-		});
-		await deleteDirectory(tempPath);
-		return;
+			await mergeAudioTrack({
+				ffmpegExecutable,
+				files: chunkNames.map((c) => ({
+					filter: {
+						pad_end: null,
+						pad_start: null,
+					},
+					outName: c,
+				})),
+				numberOfSeconds,
+				outName,
+				downloadMap,
+				remotionRoot,
+			});
+			return;
+		} finally {
+			deleteDirectory(tempPath);
+		}
 	}
 
 	const {complexFilterFlag: mergeFilter, cleanup} =
-		await createFfmpegComplexFilter(files.length, downloadMap);
+		await createFfmpegComplexFilter({
+			filters: files,
+			downloadMap,
+			ffmpegExecutable,
+			remotionRoot,
+		});
 
 	const args = [
-		...files.map((f) => ['-i', f]),
+		...files.map((f) => ['-i', f.outName]),
 		mergeFilter,
 		['-c:a', 'pcm_s16le'],
-		['-map', '[a]'],
+		['-map', `[${OUTPUT_FILTER_NAME}]`],
 		['-y', outName],
 	]
 		.filter(truthy)

@@ -14,8 +14,6 @@ import {warnAboutNonSeekableMedia} from './warn-about-non-seekable-media.js';
 
 export const DEFAULT_ACCEPTABLE_TIMESHIFT = 0.45;
 
-export const DEFAULT_ACCEPTABLE_TIMESHIFT = 0.45;
-
 export const useMediaPlayback = ({
 	mediaRef,
 	src,

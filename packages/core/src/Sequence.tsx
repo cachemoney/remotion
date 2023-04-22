@@ -1,5 +1,4 @@
 import React, {
-	createContext,
 	forwardRef,
 	useContext,
 	useEffect,
@@ -11,21 +10,13 @@ import {CompositionManager} from './CompositionManager.js';
 import {useRemotionEnvironment} from './get-environment.js';
 import {getTimelineClipName} from './get-timeline-clip-name.js';
 import {useNonce} from './nonce.js';
+import type {SequenceContextType} from './SequenceContext.js';
+import {SequenceContext} from './SequenceContext.js';
 import {
 	TimelineContext,
 	useTimelinePosition,
 } from './timeline-position-state.js';
 import {useVideoConfig} from './use-video-config.js';
-
-export type SequenceContextType = {
-	cumulatedFrom: number;
-	relativeFrom: number;
-	parentFrom: number;
-	durationInFrames: number;
-	id: string;
-};
-
-export const SequenceContext = createContext<SequenceContextType | null>(null);
 
 export type LayoutAndStyle =
 	| {
@@ -94,22 +85,15 @@ const SequenceRefForwardingFunction: React.ForwardRefRenderFunction<
 		);
 	}
 
-	// Infinity is non-integer but allowed!
-	if (durationInFrames % 1 !== 0 && Number.isFinite(durationInFrames)) {
-		throw new TypeError(
-			`The "durationInFrames" of a sequence must be an integer, but got ${durationInFrames}.`
-		);
-	}
-
 	if (typeof from !== 'number') {
 		throw new TypeError(
 			`You passed to the "from" props of your <Sequence> an argument of type ${typeof from}, but it must be a number.`
 		);
 	}
 
-	if (from % 1 !== 0) {
+	if (!Number.isFinite(from)) {
 		throw new TypeError(
-			`The "from" prop of a sequence must be an integer, but got ${from}.`
+			`The "from" prop of a sequence must be finite, but got ${from}.`
 		);
 	}
 

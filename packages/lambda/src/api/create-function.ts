@@ -12,7 +12,7 @@ import {readFileSync} from 'fs';
 import {LOG_GROUP_PREFIX} from '../defaults';
 import type {AwsRegion} from '../pricing/aws-regions';
 import {getCloudWatchLogsClient, getLambdaClient} from '../shared/aws-clients';
-import {hostedLayers} from '../shared/hosted-layers';
+import {__internal_doNotUsehostedLayers} from '../shared/hosted-layers';
 import type {LambdaArchitecture} from '../shared/validate-architecture';
 import {ROLE_NAME} from './iam-validation/suggested-policy';
 
@@ -82,7 +82,7 @@ export const createFunction = async ({
 			Description: 'Renders a Remotion video.',
 			MemorySize: memorySizeInMb,
 			Timeout: timeoutInSeconds,
-			Layers: hostedLayers[architecture][region].map(
+			Layers: __internal_doNotUsehostedLayers[architecture][region].map(
 				({layerArn, version}) => `${layerArn}:${version}`
 			),
 			Architectures: [architecture],
@@ -122,7 +122,6 @@ export const createFunction = async ({
 			})
 		);
 	} catch (err) {
-		console.log(err);
 		console.warn(
 			'⚠️ Could not lock the runtime version. We recommend to update your policies to prevent your functions from breaking soon: https://remotion.dev/docs/lambda/feb-2023-incident'
 		);

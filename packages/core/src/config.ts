@@ -2,6 +2,7 @@
  * The configuration has moved to @remotion/cli.
  * For the moment the type definitions are going to stay here
  */
+import type {Configuration} from 'webpack';
 
 type Concurrency = number | null;
 type BrowserExecutable = string | null;
@@ -21,6 +22,12 @@ type CodecOrUndefined =
 	| 'gif'
 	| undefined;
 type Crf = number | undefined;
+
+export type WebpackConfiguration = Configuration;
+
+export type WebpackOverrideFn = (
+	currentConfiguration: WebpackConfiguration
+) => WebpackConfiguration;
 
 // New config format: Add new options only here.
 type FlatConfig = RemotionConfigObject['Bundling'] &
@@ -61,6 +68,8 @@ declare global {
 		 * You can set an absolute path or a relative path that will be resolved from the closest package.json location.
 		 */
 		readonly setPublicDir: (publicDir: string | null) => void;
+
+		readonly overrideWebpackConfig: (f: WebpackOverrideFn) => void;
 	}
 	// Legacy config format: New options to not need to be added here.
 	interface RemotionConfigObject {
@@ -167,6 +176,11 @@ declare global {
 			readonly setChromiumOpenGlRenderer: (
 				renderer: 'swangle' | 'angle' | 'egl' | 'swiftshader'
 			) => void;
+			/**
+			 * Set the user agent for Chrome. Only works during rendering.
+			 * Default:
+			 */
+			readonly setChromiumUserAgent: (userAgent: string | null) => void;
 		};
 		/**
 		 * @deprecated New flat config format: You can now replace `Config.Rendering.` with `Config.`
@@ -348,6 +362,11 @@ let enabled = false;
 export const Config = new Proxy(conf, {
 	get(target, prop, receiver) {
 		if (!enabled) {
+			if (typeof document !== 'undefined') {
+				// We are in the browser
+				return {};
+			}
+
 			throw new Error(
 				'To use the Remotion config file, you need to have @remotion/cli installed.\n- Make sure that all versions of Remotion are the same.\n- Make sure that @remotion/cli is installed.\n- Make sure Config is imported from "@remotion/cli", not "remotion".'
 			);

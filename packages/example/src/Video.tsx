@@ -5,6 +5,7 @@ import {TwentyTwoKHzAudio} from './22KhzAudio';
 import BetaText from './BetaText';
 import {CancelRender} from './CancelRender';
 import {ColorInterpolation} from './ColorInterpolation';
+import {ComplexSounds} from './ComplexSounds';
 import {MyCtx, WrappedInContext} from './Context';
 import CorruptVideo from './CorruptVideo';
 import {ErrorOnFrame10} from './ErrorOnFrame10';
@@ -18,6 +19,7 @@ import {OffthreadRemoteVideo} from './OffthreadRemoteVideo/OffthreadRemoteVideo'
 import {OrbScene} from './Orb';
 import InfinityVideo from './ReallyLongVideo';
 import RemoteVideo from './RemoteVideo';
+import RiveVehicle from './Rive/RiveExample';
 import {ScalePath} from './ScalePath';
 import {Scripts} from './Scripts';
 import CircleTest from './Shapes/CircleTest';
@@ -36,7 +38,7 @@ import {VideoOnCanvas} from './VideoOnCanvas';
 import {Greenscreen} from './VideoOnCanvas/greenscreen';
 import {VideoSpeed} from './VideoSpeed';
 import {VideoTesting} from './VideoTesting';
-import {WarpDemo} from './WarpText';
+import {WarpDemoOuter} from './WarpText';
 import {WarpDemo2} from './WarpText/demo2';
 
 if (alias !== 'alias') {
@@ -393,6 +395,14 @@ export const Index: React.FC = () => {
 			</Folder>
 			<Folder name="audio-tests">
 				<Composition
+					id="complex-sounds"
+					component={ComplexSounds}
+					width={1920}
+					height={1080}
+					fps={30}
+					durationInFrames={720}
+				/>
+				<Composition
 					id="22khz"
 					component={TwentyTwoKHzAudio}
 					width={1920}
@@ -545,7 +555,7 @@ export const Index: React.FC = () => {
 				/>
 				<Composition
 					id="path-warp"
-					component={WarpDemo}
+					component={WarpDemoOuter}
 					durationInFrames={500}
 					fps={30}
 					height={1080}
@@ -641,6 +651,16 @@ export const Index: React.FC = () => {
 				<Composition
 					id="star-test"
 					component={StarTest}
+					width={1200}
+					height={630}
+					fps={30}
+					durationInFrames={150}
+				/>
+			</Folder>
+			<Folder name="Rive">
+				<Composition
+					id="rive-vehicle"
+					component={RiveVehicle}
 					width={1200}
 					height={630}
 					fps={30}

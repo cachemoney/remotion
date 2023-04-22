@@ -9,7 +9,7 @@ import {OFFTHREAD_VIDEO_CLASS_NAME} from '../default-css.js';
 import {Img} from '../Img.js';
 import {Internals} from '../internals.js';
 import {random} from '../random.js';
-import {SequenceContext} from '../Sequence.js';
+import {SequenceContext} from '../SequenceContext.js';
 import {useTimelinePosition} from '../timeline-position-state.js';
 import {useCurrentFrame} from '../use-current-frame.js';
 import {useUnsafeVideoConfig} from '../use-unsafe-video-config.js';
@@ -74,7 +74,7 @@ export const OffthreadVideoForRendering: React.FC<OffthreadVideoProps> = ({
 			throw new Error('No src passed');
 		}
 
-		if (!window.remotion_videoEnabled) {
+		if (!window.remotion_audioEnabled) {
 			return;
 		}
 

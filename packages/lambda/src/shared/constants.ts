@@ -49,6 +49,8 @@ export const DEFAULT_OUTPUT_PRIVACY: Privacy = 'public';
 
 export const DEFAULT_CLOUDWATCH_RETENTION_PERIOD = 14;
 
+export const ENCODING_PROGRESS_STEP_SIZE = 100;
+
 export const REMOTION_BUCKET_PREFIX = 'remotionlambda-';
 export const RENDER_FN_PREFIX = 'remotion-render-';
 export const LOG_GROUP_PREFIX = '/aws/lambda/';
@@ -253,6 +255,7 @@ export type LambdaPayloads = {
 		forceHeight: number | null;
 		forceWidth: number | null;
 		bucketName: string | null;
+		dumpBrowserLogs: boolean;
 	};
 	launch: {
 		rendererFunctionName: string | null;
@@ -290,6 +293,7 @@ export type LambdaPayloads = {
 		webhook: WebhookOption;
 		forceHeight: number | null;
 		forceWidth: number | null;
+		dumpBrowserLogs: boolean;
 	};
 	status: {
 		type: LambdaRoutines.status;
@@ -333,6 +337,7 @@ export type LambdaPayloads = {
 		launchFunctionConfig: {
 			version: string;
 		};
+		dumpBrowserLogs: boolean;
 	};
 	still: {
 		type: LambdaRoutines.still;
@@ -356,6 +361,7 @@ export type LambdaPayloads = {
 		forceHeight: number | null;
 		forceWidth: number | null;
 		bucketName: string | null;
+		dumpBrowserLogs: boolean;
 	};
 	compositions: {
 		type: LambdaRoutines.compositions;
@@ -367,6 +373,7 @@ export type LambdaPayloads = {
 		timeoutInMilliseconds: number;
 		serveUrl: string;
 		bucketName: string | null;
+		dumpBrowserLogs: boolean;
 	};
 };
 

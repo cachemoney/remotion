@@ -295,6 +295,12 @@ _optional_
 
 If true, the controls flash when the player enters the scene. After 2 seconds without hover, the controls fade out. This is similar to how YouTube does it, and signals to the user that the player is in fact controllable. You can also pass a `number`, with which you can customize the duration in milliseconds. Default `true` since `v3.2.24`, before that unsupported.
 
+### `initiallyMuted` <AvailableFrom v="3.3.81" />
+
+_optional_
+
+If true, the player is muted in its initial state. This is useful if the video must autoplay regardless of the [autoplay](/docs/player/autoplay) policy of the browser.
+
 ### `renderPlayPauseButton` <AvailableFrom v="3.2.32" />
 
 _optional_
@@ -373,6 +379,12 @@ export const App: React.FC = () => {
 };
 ```
 
+### `alwaysShowControls` <AvailableFrom v="3.3.55" />
+
+_optional_
+
+If true, displays the player controls at all times even if the mouse is outside the player area. Default `false`.
+
 ## `PlayerRef`
 
 You may attach a ref to the player and control it in an imperative manner.
@@ -438,6 +450,8 @@ If you play the video from a user gesture, pass the `SyntheticEvent` in as an ar
 
 Gets the current position expressed as the current frame. Divide by the `fps` you passed to get the time in seconds.
   
+[Special considerations must be made](https://www.remotion.dev/docs/player/current-time) if you want to display a component that synchronizes with the time of the player.
+
 [Special considerations must be made](https://www.remotion.dev/docs/player/current-time) if you want to display a component that synchronizes with the time of the player.
 
 ### `isPlaying()` <AvailableFrom v="2.5.7" />

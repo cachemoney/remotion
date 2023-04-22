@@ -7,7 +7,6 @@ import {isMainThread} from 'worker_threads';
 import {copyDir} from './copy-dir';
 import {indexHtml} from './index-html';
 import {readRecursively} from './read-recursively';
-import type {WebpackOverrideFn} from './types';
 import {webpackConfig} from './webpack-config';
 
 const promisified = promisify(webpack);
@@ -18,7 +17,9 @@ const prepareOutDir = async (specified: string | null) => {
 		return specified;
 	}
 
-	return fs.promises.mkdtemp(path.join(os.tmpdir(), 'react-motion-graphics'));
+	return fs.promises.mkdtemp(
+		path.join(os.tmpdir(), 'remotion-webpack-bundle-')
+	);
 };
 
 const trimLeadingSlash = (p: string): string => {

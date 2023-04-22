@@ -5,7 +5,6 @@ import React, {
 	useRef,
 	useState,
 } from 'react';
-import {SharedAudioContextProvider} from './audio/shared-audio-tags.js';
 import {CompositionManagerProvider} from './CompositionManager.js';
 import {continueRender, delayRender} from './delay-render.js';
 import {NativeLayersProvider} from './NativeLayers.js';
@@ -18,8 +17,17 @@ import type {
 	SetTimelineContextValue,
 	TimelineContextValue,
 } from './timeline-position-state.js';
-import {SetTimelineContext, TimelineContext} from './timeline-position-state.js';
+import {
+	SetTimelineContext,
+	TimelineContext,
+} from './timeline-position-state.js';
 import {DurationsContextProvider} from './video/duration-state.js';
+
+declare const __webpack_module__: {
+	hot: {
+		addStatusHandler(callback: (status: string) => void): void;
+	};
+};
 
 export const RemotionRoot: React.FC<{
 	children: React.ReactNode;
@@ -73,12 +81,15 @@ export const RemotionRoot: React.FC<{
 	}, [fastRefreshes]);
 
 	useEffect(() => {
-		if (module.hot) {
-			module.hot.addStatusHandler((status) => {
-				if (status === 'idle') {
-					setFastRefreshes((i) => i + 1);
-				}
-			});
+		// TODO: This can be moved to renderer?
+		if (typeof __webpack_module__ !== 'undefined') {
+			if (__webpack_module__.hot) {
+				__webpack_module__.hot.addStatusHandler((status) => {
+					if (status === 'idle') {
+						setFastRefreshes((i) => i + 1);
+					}
+				});
+			}
 		}
 	}, []);
 
@@ -88,15 +99,8 @@ export const RemotionRoot: React.FC<{
 				<SetTimelineContext.Provider value={setTimelineContextValue}>
 					<PrefetchProvider>
 						<NativeLayersProvider>
-							<CompositionManagerProvider>
-								<DurationsContextProvider>
-									<SharedAudioContextProvider
-										// In the preview, which is mostly played on Desktop, we opt out of the autoplay policy fix as described in https://github.com/remotion-dev/remotion/pull/554, as it mostly applies to mobile.
-										numberOfAudioTags={numberOfAudioTags}
-									>
-										{children}
-									</SharedAudioContextProvider>
-								</DurationsContextProvider>
+							<CompositionManagerProvider numberOfAudioTags={numberOfAudioTags}>
+								<DurationsContextProvider>{children}</DurationsContextProvider>
 							</CompositionManagerProvider>
 						</NativeLayersProvider>
 					</PrefetchProvider>

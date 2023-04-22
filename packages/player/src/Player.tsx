@@ -63,6 +63,8 @@ export type PlayerProps<T> = {
 	initiallyShowControls?: number | boolean;
 	renderPlayPauseButton?: RenderPlayPauseButton;
 	renderFullscreenButton?: RenderFullscreenButton;
+	alwaysShowControls?: boolean;
+	initiallyMuted?: boolean;
 } & PropsIfHasProps<T> &
 	CompProps<T>;
 
@@ -108,6 +110,8 @@ const PlayerFn = <T,>(
 		initiallyShowControls,
 		renderFullscreenButton,
 		renderPlayPauseButton,
+		alwaysShowControls = false,
+		initiallyMuted = false,
 		...componentProps
 	}: PlayerProps<T>,
 	ref: MutableRefObject<PlayerRef>
@@ -179,10 +183,11 @@ const PlayerFn = <T,>(
 		'compositionWidth',
 		'of the <Player /> component'
 	);
-	Internals.validateDurationInFrames(
+	Internals.validateDurationInFrames({
 		durationInFrames,
-		'of the <Player/> component'
-	);
+		component: 'of the <Player/> component',
+		allowFloats: false,
+	});
 	Internals.validateFps(fps, 'as a prop of the <Player/> component', false);
 
 	validateInOutFrames({
@@ -320,6 +325,7 @@ const PlayerFn = <T,>(
 				fps={fps}
 				inputProps={inputProps}
 				numberOfSharedAudioTags={numberOfSharedAudioTags}
+				initiallyMuted={initiallyMuted}
 			>
 				<Internals.Timeline.SetTimelineContext.Provider
 					value={setTimelineContextValue}
@@ -355,6 +361,7 @@ const PlayerFn = <T,>(
 							initiallyShowControls={initiallyShowControls ?? true}
 							renderFullscreen={renderFullscreenButton ?? null}
 							renderPlayPauseButton={renderPlayPauseButton ?? null}
+							alwaysShowControls={alwaysShowControls}
 						/>
 					</PlayerEventEmitterContext.Provider>
 				</Internals.Timeline.SetTimelineContext.Provider>

@@ -159,7 +159,9 @@ const innerStillHandler = async (
 		composition,
 		output: outputPath,
 		serveUrl,
-		dumpBrowserLogs: false,
+		dumpBrowserLogs:
+			lambdaParams.dumpBrowserLogs ??
+			RenderInternals.isEqualOrBelowLogLevel(lambdaParams.logLevel, 'verbose'),
 		envVariables: lambdaParams.envVariables,
 		frame: RenderInternals.convertToPositiveFrameIndex({
 			frame: lambdaParams.frame,
@@ -215,6 +217,8 @@ const innerStillHandler = async (
 		// overestimate the price, but will only have a miniscule effect (~0.2%)
 		diskSizeInMb: MAX_EPHEMERAL_STORAGE_IN_MB,
 	});
+
+	RenderInternals.cleanDownloadMap(downloadMap);
 
 	return {
 		output: getOutputUrlFromMetadata(

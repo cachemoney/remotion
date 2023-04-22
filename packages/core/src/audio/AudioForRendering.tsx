@@ -13,16 +13,12 @@ import {CompositionManager} from '../CompositionManager.js';
 import {continueRender, delayRender} from '../delay-render.js';
 import {useRemotionEnvironment} from '../get-environment.js';
 import {random} from '../random.js';
-import {SequenceContext} from '../Sequence.js';
+import {SequenceContext} from '../SequenceContext.js';
 import {useTimelinePosition} from '../timeline-position-state.js';
 import {useCurrentFrame} from '../use-current-frame.js';
 import {evaluateVolume} from '../volume-prop.js';
 import type {RemotionAudioProps} from './props.js';
 import {useFrameForVolumeProp} from './use-audio-frame.js';
-
-type AudioForRenderingProps = RemotionAudioProps & {
-	onDuration: (src: string, durationInSeconds: number) => void;
-};
 
 type AudioForRenderingProps = RemotionAudioProps & {
 	onDuration: (src: string, durationInSeconds: number) => void;

@@ -20,6 +20,7 @@ import {codecSupportsMedia} from './codec-supports-media';
 import {convertNumberOfGifLoopsToFfmpegSyntax} from './convert-number-of-gif-loops-to-ffmpeg';
 import {validateQualitySettings} from './crf';
 import {deleteDirectory} from './delete-directory';
+import {warnAboutM2Bug} from './does-have-m2-bug';
 import type {FfmpegExecutable} from './ffmpeg-executable';
 import {getExecutableBinary} from './ffmpeg-flags';
 import type {FfmpegOverrideFn} from './ffmpeg-override';
@@ -166,12 +167,10 @@ const getAssetsData = async ({
 
 	onProgress(1);
 
-	await Promise.all([
-		deleteDirectory(downloadMap.audioMixing),
-		...preprocessed.map((p) => {
-			return deleteDirectory(p);
-		}),
-	]);
+	deleteDirectory(downloadMap.audioMixing);
+	preprocessed.forEach((p) => {
+		deleteDirectory(p.outName);
+	});
 
 	return outName;
 };
@@ -326,7 +325,7 @@ export const spawnFfmpeg = async (
 		await ffmpegTask;
 		options.onProgress?.(expectedFrames);
 		if (audio) {
-			await deleteDirectory(path.dirname(audio));
+			deleteDirectory(path.dirname(audio));
 		}
 
 		const file = await new Promise<Buffer | null>((resolve, reject) => {
@@ -341,7 +340,7 @@ export const spawnFfmpeg = async (
 				resolve(null);
 			}
 		});
-		await deleteDirectory(options.assetsInfo.downloadMap.stitchFrames);
+		deleteDirectory(options.assetsInfo.downloadMap.stitchFrames);
 
 		return {
 			getLogs: () => '',
@@ -495,6 +494,8 @@ export const stitchFramesToVideo = async (
 	const happyPath = task.catch(() => {
 		throw new Error(getLogs());
 	});
+
+	warnAboutM2Bug(options.codec ?? null, options.pixelFormat ?? null);
 
 	return Promise.race([
 		happyPath,

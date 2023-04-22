@@ -42,6 +42,13 @@ export const articles = [
     crumb: null,
   },
   {
+    id: "get-help",
+    title: "Get help",
+    relativePath: "docs/ask-for-help.md",
+    compId: "articles-docs-ask-for-help",
+    crumb: null,
+  },
+  {
     id: "audio-visualization",
     title: "Audio visualization",
     relativePath: "docs/audio-visualization.md",
@@ -68,6 +75,13 @@ export const articles = [
     relativePath: "docs/brownfield-installation.md",
     compId: "articles-docs-brownfield-installation",
     crumb: "Brownfield integration",
+  },
+  {
+    id: "buffer-state",
+    title: "Display a buffer state",
+    relativePath: "docs/buffer-state.md",
+    compId: "articles-docs-buffer-state",
+    crumb: "Building video apps",
   },
   {
     id: "bundle",
@@ -173,6 +187,13 @@ export const articles = [
     relativePath: "docs/clipper.md",
     compId: "articles-docs-clipper",
     crumb: "Experimental API",
+  },
+  {
+    id: "compare/motion-canvas",
+    title: "How does Remotion compare to Motion Canvas?",
+    relativePath: "docs/compare/motion-canvas.md",
+    compId: "articles-docs-compare-motion-canvas",
+    crumb: "FAQ",
   },
   {
     id: "composition",
@@ -327,6 +348,13 @@ export const articles = [
     relativePath: "docs/folder.md",
     compId: "articles-docs-folder",
     crumb: "API",
+  },
+  {
+    id: "font-picker",
+    title: "Build a Google Font picker",
+    relativePath: "docs/font-picker.md",
+    compId: "articles-docs-font-picker",
+    crumb: "Building video apps",
   },
   {
     id: "freeze",
@@ -798,6 +826,13 @@ export const articles = [
     crumb: "Lambda",
   },
   {
+    id: "lambda/php",
+    title: "Triggering renders from PHP",
+    relativePath: "docs/lambda/php.md",
+    compId: "articles-docs-lambda-php",
+    crumb: "@remotion/lambda",
+  },
+  {
     id: "presignurl",
     title: "presignUrl()",
     relativePath: "docs/lambda/presignurl.md",
@@ -858,6 +893,13 @@ export const articles = [
     title: "simulatePermissions()",
     relativePath: "docs/lambda/simulatepermissions.md",
     compId: "articles-docs-lambda-simulatepermissions",
+    crumb: "Lambda API",
+  },
+  {
+    id: "speculatefunctionname",
+    title: "speculateFunctionName()",
+    relativePath: "docs/lambda/speculateFunctionName.md",
+    compId: "articles-docs-lambda-speculateFunctionName",
     crumb: "Lambda API",
   },
   {
@@ -945,15 +987,22 @@ export const articles = [
     crumb: "Lambda",
   },
   {
+    id: "lambda/without-iam/ec2",
+    title: "Authenticating Lambda with EC2",
+    relativePath: "docs/lambda/without-iam/ec2.md",
+    compId: "articles-docs-lambda-without-iam-ec2",
+    crumb: "@remotion/lambda",
+  },
+  {
     id: "lambda/without-iam/example",
     title: "Example setup without IAM user",
     relativePath: "docs/lambda/without-iam/example.md",
     compId: "articles-docs-lambda-without-iam-example",
-    crumb: "Lambda without IAM",
+    crumb: "IAM Roles Example",
   },
   {
     id: "lambda/without-iam/index",
-    title: "Using Lambda without an IAM user",
+    title: "Using Lambda with IAM roles",
     relativePath: "docs/lambda/without-iam/index.md",
     compId: "articles-docs-lambda-without-iam-index",
     crumb: "Lambda without IAM",
@@ -1071,6 +1120,13 @@ export const articles = [
     crumb: "FAQ",
   },
   {
+    id: "miscellaneous/render-on-edge",
+    title: "Can I render videos on the edge?",
+    relativePath: "docs/miscellaneous/render-on-edge.md",
+    compId: "articles-docs-miscellaneous-render-on-edge",
+    crumb: "FAQ",
+  },
+  {
     id: "miscellaneous/snippets/accelerated-video",
     title: "Change the speed of a video over time",
     relativePath: "docs/miscellaneous/snippets/accelerated-video.md",
@@ -1113,6 +1169,13 @@ export const articles = [
     relativePath: "docs/miscellaneous/ts-aliases.md",
     compId: "articles-docs-miscellaneous-ts-aliases",
     crumb: "How to",
+  },
+  {
+    id: "miscellaneous/vercel-functions",
+    title: "Can I render videos using Vercel Serverless functions?",
+    relativePath: "docs/miscellaneous/vercel-functions.md",
+    compId: "articles-docs-miscellaneous-vercel-functions",
+    crumb: "FAQ",
   },
   {
     id: "miscellaneous/video-formats",
@@ -1633,6 +1696,20 @@ export const articles = [
     crumb: "Ecosystem",
   },
   {
+    id: "rive/index",
+    title: "@remotion/rive",
+    relativePath: "docs/rive/index.md",
+    compId: "articles-docs-rive-index",
+    crumb: "Integrations",
+  },
+  {
+    id: "rive/remotionrivecanvas",
+    title: "<RemotionRiveCanvas>",
+    relativePath: "docs/rive/remotionrivecanvas.md",
+    compId: "articles-docs-rive-remotionrivecanvas",
+    crumb: "@remotion/rive",
+  },
+  {
     id: "scaling",
     title: "Output scaling",
     relativePath: "docs/scaling.md",
@@ -1948,6 +2025,13 @@ export const articles = [
     crumb: "Browser quirks",
   },
   {
+    id: "troubleshooting/debug-failed-render",
+    title: "Debugging render failures",
+    relativePath: "docs/troubleshooting/debug-failed-render.md",
+    compId: "articles-docs-troubleshooting-debug-failed-render",
+    crumb: "Troubleshooting",
+  },
+  {
     id: "defaultprops-too-big",
     title: "defaultProps too big - could not serialize",
     relativePath: "docs/troubleshooting/defaultprops-too-big.md",
@@ -1967,6 +2051,13 @@ export const articles = [
     relativePath: "docs/troubleshooting/rosetta.md",
     compId: "articles-docs-troubleshooting-rosetta",
     crumb: "Troubleshooting",
+  },
+  {
+    id: "player-flicker",
+    title: "Avoiding flickering in <Player>",
+    relativePath: "docs/troubleshooting/video-flicker.md",
+    compId: "articles-docs-troubleshooting-video-flicker",
+    crumb: "Frame-perfection",
   },
   {
     id: "use-audio-data",

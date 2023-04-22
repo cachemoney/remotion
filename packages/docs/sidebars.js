@@ -194,6 +194,7 @@ module.exports = {
         "lambda/rendermediaonlambda",
         "lambda/renderstillonlambda",
         "lambda/simulatepermissions",
+        "lambda/speculatefunctionname",
         "lambda/validatewebhooksignature",
       ],
     },
@@ -318,6 +319,15 @@ module.exports = {
         "shapes/make-pie",
       ],
     },
+    {
+      type: "category",
+      label: "@remotion/rive",
+      link: {
+        type: "doc",
+        id: "rive/index",
+      },
+      items: ["rive/index", "rive/remotionrivecanvas"],
+    },
   ],
   mainSidebar: [
     {
@@ -411,7 +421,6 @@ module.exports = {
         "lambda/custom-destination",
         "lambda/checklist",
         "lambda/webhooks",
-        "lambda/feb-2023-incident",
         {
           type: "category",
           label: "Troubleshooting",
@@ -431,8 +440,13 @@ module.exports = {
             type: "doc",
             id: "lambda/without-iam/index",
           },
-          items: ["lambda/without-iam/index", "lambda/without-iam/example"],
+          items: [
+            "lambda/without-iam/index",
+            "lambda/without-iam/example",
+            "lambda/without-iam/ec2",
+          ],
         },
+        "lambda/php",
         "lambda/serverless-framework-integration",
         "lambda/sqs",
         "lambda/multiple-buckets",
@@ -443,12 +457,14 @@ module.exports = {
         "lambda/changelog",
         "lambda/upgrading",
         "lambda/uninstall",
+        "lambda/feb-2023-incident",
       ],
     },
     {
       type: "category",
       label: "Troubleshooting",
       items: [
+        "troubleshooting/debug-failed-render",
         "timeout",
         "target-closed",
         "media-playback-error",
@@ -467,6 +483,7 @@ module.exports = {
         "troubleshooting/loading-root-component",
         "troubleshooting/defaultprops-too-big",
         "troubleshooting/could-not-be-parsed-as-a-value-list",
+        "troubleshooting/player-flicker",
       ],
     },
     {
@@ -490,7 +507,9 @@ module.exports = {
         "spline",
         "after-effects",
         "video-uploads",
+        "buffer-state",
         "presigned-urls",
+        "font-picker",
       ],
     },
     {
@@ -508,6 +527,7 @@ module.exports = {
       type: "category",
       label: "Miscellaneous",
       items: [
+        "get-help",
         "brownfield",
         "ffmpeg",
         "chromium-flags",
@@ -521,6 +541,9 @@ module.exports = {
         "miscellaneous/changing-temp-dir",
         "miscellaneous/automatic-duration",
         "miscellaneous/video-formats",
+        "miscellaneous/vercel-functions",
+        "miscellaneous/render-on-edge",
+        "compare/motion-canvas",
       ],
     },
     {

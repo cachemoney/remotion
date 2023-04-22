@@ -13,6 +13,7 @@ import {
 } from '../helpers/get-effective-translation';
 import {useDimensions} from '../helpers/is-current-selected-still';
 import {useKeybinding} from '../helpers/use-keybinding';
+import {EditorZoomGesturesContext} from '../state/editor-zoom-gestures';
 import {PreviewSizeContext} from '../state/preview-size';
 import {SPACING_UNIT} from './layout';
 import {VideoPreview} from './Preview';
@@ -38,6 +39,7 @@ export const Canvas: React.FC = () => {
 	const dimensions = useDimensions();
 	const ref = useRef<HTMLDivElement>(null);
 	const {setSize, size: previewSize} = useContext(PreviewSizeContext);
+	const {editorZoomGestures} = useContext(EditorZoomGesturesContext);
 	const keybindings = useKeybinding();
 
 	const size = PlayerInternals.useElementSize(ref, {
@@ -45,14 +47,14 @@ export const Canvas: React.FC = () => {
 		shouldApplyCssTransforms: true,
 	});
 
-	const isFit =
-		previewSize.size === 'auto' ||
-		(previewSize.size === 1 &&
-			previewSize.translation.x === 0 &&
-			previewSize.translation.y === 0);
+	const isFit = previewSize.size === 'auto';
 
 	const onWheel = useCallback(
 		(e: WheelEvent) => {
+			if (!editorZoomGestures) {
+				return;
+			}
+
 			if (!size) {
 				return;
 			}
@@ -145,7 +147,7 @@ export const Canvas: React.FC = () => {
 				};
 			});
 		},
-		[dimensions, isFit, setSize, size]
+		[editorZoomGestures, dimensions, isFit, setSize, size]
 	);
 
 	useEffect(() => {

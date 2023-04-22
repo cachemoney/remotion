@@ -159,10 +159,9 @@ const renderHandler = async (
 			serveUrl: params.serveUrl,
 			quality: params.quality,
 			envVariables: params.envVariables,
-			dumpBrowserLogs: RenderInternals.isEqualOrBelowLogLevel(
-				params.logLevel,
-				'verbose'
-			),
+			dumpBrowserLogs:
+				params.dumpBrowserLogs ??
+				RenderInternals.isEqualOrBelowLogLevel(params.logLevel, 'verbose'),
 			verbose: RenderInternals.isEqualOrBelowLogLevel(
 				params.logLevel,
 				'verbose'
@@ -212,7 +211,9 @@ const renderHandler = async (
 			port: null,
 			everyNthFrame: params.everyNthFrame,
 			numberOfGifLoops: null,
-			downloadMap,
+			internal: {
+				downloadMap,
+			},
 			muted: params.muted,
 			enforceAudioTrack: true,
 			audioBitrate: params.audioBitrate,
@@ -273,6 +274,7 @@ const renderHandler = async (
 			downloadBehavior: null,
 			customCredentials: null,
 		}),
+		RenderInternals.cleanDownloadMap(downloadMap),
 	]);
 };
 

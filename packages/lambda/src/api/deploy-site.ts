@@ -1,4 +1,5 @@
 import type {WebpackOverrideFn} from '@remotion/bundler';
+import fs from 'fs';
 import {lambdaDeleteFile, lambdaLs} from '../functions/helpers/io';
 import type {AwsRegion} from '../pricing/aws-regions';
 import {bundleSite} from '../shared/bundle-site';
@@ -23,6 +24,7 @@ export type DeploySiteInput = {
 		onBundleProgress?: (progress: number) => void;
 		onUploadProgress?: (upload: UploadDirProgress) => void;
 		webpackOverride?: WebpackOverrideFn;
+		ignoreRegisterRootWarning?: boolean;
 		enableCaching?: boolean;
 		publicDir?: string | null;
 		rootDir?: string;
@@ -84,12 +86,15 @@ export const deploySite = async ({
 			region,
 			prefix: subFolder,
 		}),
-		bundleSite(entryPoint, options?.onBundleProgress ?? (() => undefined), {
+		bundleSite({
 			publicPath: `/${subFolder}/`,
 			webpackOverride: options?.webpackOverride ?? ((f) => f),
 			enableCaching: options?.enableCaching ?? true,
 			publicDir: options?.publicDir,
 			rootDir: options?.rootDir,
+			ignoreRegisterRootWarning: options?.ignoreRegisterRootWarning,
+			onProgress: options?.onBundleProgress ?? (() => undefined),
+			entryPoint,
 		}),
 	]);
 
@@ -120,6 +125,16 @@ export const deploySite = async ({
 			})
 		),
 	]);
+
+	if (!process.env.VITEST) {
+		if (fs.rmSync) {
+			fs.rmSync(bundled, {
+				recursive: true,
+			});
+		} else {
+			fs.rmdirSync(bundled, {recursive: true});
+		}
+	}
 
 	return {
 		serveUrl: makeS3ServeUrl({bucketName, subFolder, region}),
